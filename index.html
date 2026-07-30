@@ -27,6 +27,7 @@
     <button data-view="hydrants" class="drawer-link">🚰 Bornes-fontaines</button>
     <button id="drawerAdd" class="drawer-link">➕ Ajouter</button>
     <button data-view="preplans" class="drawer-link">🏢 Préplans / bâtiments</button>
+    <button data-view="vehicles" class="drawer-link">🚒 Caserne et véhicules</button>
     <button data-view="inspections" class="drawer-link">✅ Inspections</button>
     <button data-view="search" class="drawer-link">🔎 Recherche d’adresse</button>
     <div class="drawer-separator"></div>
@@ -127,6 +128,17 @@
       <div id="buildingList" class="card-list"></div>
     </section>
 
+
+    <section id="view-vehicles" class="view">
+      <div class="section-title"><div><small>RESSOURCES MOBILES</small><h2>🚒 Caserne et véhicules</h2></div><button id="vehiclesBackMap" class="secondary small">🗺️ Carte</button></div>
+      <section class="station-card">
+        <div class="station-card-head"><div class="station-icon">🚒</div><div><small>CASERNE PRINCIPALE</small><h3 id="stationNameDisplay">Caserne de Louiseville</h3><p id="stationAddressDisplay">Position configurable</p></div></div>
+        <div class="station-actions"><button id="showStationMap" class="secondary">Voir sur la carte</button><button id="navigateStation" class="primary">➤ Navigation</button><button id="editStation" class="secondary">⚙️ Modifier</button></div>
+      </section>
+      <div class="vehicle-toolbar"><div><strong>Flotte officielle</strong><span id="vehicleSyncStatus">Chargement…</span></div><button id="stopSharingAll" class="danger small hidden">Arrêter mon partage GPS</button></div>
+      <div id="vehicleList" class="vehicle-list"></div>
+    </section>
+
     <section id="view-inspections" class="view">
       <div class="section-title"><div><small>SUIVI</small><h2>Inspections</h2></div></div>
       <div id="inspectionStats" class="stats-grid"></div><div id="inspectionList" class="card-list"></div>
@@ -208,6 +220,37 @@
 
   <dialog id="preplanDialog" class="preplan-dialog"><div id="preplanContent"></div></dialog>
 
+
+  <dialog id="vehicleDialog" class="vehicle-dialog">
+    <form id="vehicleForm" method="dialog">
+      <div class="modal-head"><div><small>VÉHICULE</small><h2 id="vehicleDialogTitle">Modifier le véhicule</h2></div><button type="button" id="closeVehicleDialog">×</button></div>
+      <input type="hidden" id="vehicleId">
+      <div class="form-grid">
+        <label>Appellation<input id="vehicleName" required></label>
+        <label>Numéro<input id="vehicleNumber" required></label>
+        <label>Type<select id="vehicleType"><option value="engine">Autopompe</option><option value="ladder">Échelle</option><option value="tanker">Citerne</option><option value="support">Unité de soutien</option><option value="pickup">Pickup</option><option value="chief">Chef</option></select></label>
+        <label>Statut<select id="vehicleStatus"><option value="station">À la caserne</option><option value="enroute">En route</option><option value="onscene">Sur les lieux</option><option value="water">Alimentation établie</option><option value="returning">Retour</option><option value="out">Hors service</option></select></label>
+        <label class="wide">Équipage / notes<input id="vehicleCrew" placeholder="Ex. 4 pompiers"></label>
+      </div>
+      <div class="modal-actions"><span></span><button type="button" id="cancelVehicleDialog" class="secondary">Annuler</button><button type="submit" class="primary">Enregistrer</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="stationDialog" class="vehicle-dialog">
+    <form id="stationForm" method="dialog">
+      <div class="modal-head"><div><small>CASERNE</small><h2>Configurer la caserne</h2></div><button type="button" id="closeStationDialog">×</button></div>
+      <div class="form-grid">
+        <label class="wide">Nom<input id="stationName" required></label>
+        <label class="wide">Adresse<input id="stationAddress"></label>
+        <label>Latitude<input id="stationLat" type="number" step="any" required></label>
+        <label>Longitude<input id="stationLng" type="number" step="any" required></label>
+        <label class="wide">Téléphone<input id="stationPhone" type="tel"></label>
+      </div>
+      <p class="muted">La position initiale est placée au centre de Louiseville. Inscrivez les coordonnées exactes de la caserne.</p>
+      <div class="modal-actions"><span></span><button type="button" id="cancelStationDialog" class="secondary">Annuler</button><button type="submit" class="primary">Enregistrer</button></div>
+    </form>
+  </dialog>
+
   <div id="toast" class="toast hidden"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="firebase-config.js"></script>
@@ -216,5 +259,6 @@
   <script src="preplans.js"></script>
   <script src="assistant.js"></script>
   <script src="navigation.js"></script>
+  <script src="vehicles.js"></script>
 </body>
 </html>

@@ -30,6 +30,11 @@
       subscribeBuildings(ok, fail) { return fs.onSnapshot(fs.collection(db, "batiments"), s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))), fail); },
       saveBuilding(p) { const data={...p,id:String(p.id),lat:Number(p.lat),lng:Number(p.lng),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"batiments",String(p.id)),data,{merge:true}); },
       deleteBuilding(id) { return fs.deleteDoc(fs.doc(db,"batiments",String(id))); },
+      subscribeVehicles(ok, fail) { return fs.onSnapshot(fs.collection(db, "vehicules"), s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))), fail); },
+      saveVehicle(v) { const data={...v,id:String(v.id),lat:Number(v.lat),lng:Number(v.lng),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"vehicules",String(v.id)),data,{merge:true}); },
+      deleteVehicle(id) { return fs.deleteDoc(fs.doc(db,"vehicules",String(id))); },
+      subscribeStation(ok, fail) { return fs.onSnapshot(fs.doc(db,"configuration","caserne"), d => ok(d.exists()?{id:d.id,...d.data()}:null), fail); },
+      saveStation(v) { const data={...v,lat:Number(v.lat),lng:Number(v.lng),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"configuration","caserne"),data,{merge:true}); },
       async saveMany(items) {
         for (let i = 0; i < items.length; i += 400) {
           const batch = fs.writeBatch(db);
