@@ -14,19 +14,86 @@
   function criticalCard(icon,title,text,urgent=false){return `<article class="assistant-critical ${urgent?'urgent':''}"><span>${icon}</span><div><small>${title}</small><strong>${esc(text||"Non indiqué")}</strong></div></article>`}
   function render(){if(!active)return;matchedBuilding=findBuilding(active);nearest=computeHydrants(active);$("assistantEmpty").classList.add("hidden");$("assistantDashboard").classList.remove("hidden");$("assistantActiveAddress").textContent=active.adresse;$("assistantPreplanStatus").textContent=matchedBuilding?`Préplan trouvé : ${matchedBuilding.name}`:"Aucun préplan associé à cette adresse";
     const b=matchedBuilding;
-    $("assistantCritical").innerHTML=b?[criticalCard("⚠️","RISQUES PARTICULIERS",b.risks,!!b.risks),criticalCard("💧","FDC / PRISE POMPIER",b.fdc),criticalCard("⚡","COUPURE ÉLECTRIQUE",b.electrical),criticalCard("🔥","GAZ / PROPANE",b.gas),criticalCard("☣️","MATIÈRES DANGEREUSES",b.hazmat,!!b.hazmat),criticalCard("🚪","ACCÈS POMPIER",b.access)].join(""):criticalCard("ℹ️","PRÉPLAN","Aucun bâtiment à risque enregistré à proximité");
+    $("assistantCritical").innerHTML=(active.callType?criticalCard("🚨","NATURE DE L’APPEL",active.callType,true):"")+(active.alarmLevel?criticalCard("🔔","NIVEAU / CAS",active.alarmLevel):"")+(b?[criticalCard("⚠️","RISQUES PARTICULIERS",b.risks,!!b.risks),criticalCard("💧","FDC / PRISE POMPIER",b.fdc),criticalCard("⚡","COUPURE ÉLECTRIQUE",b.electrical),criticalCard("🔥","GAZ / PROPANE",b.gas),criticalCard("☣️","MATIÈRES DANGEREUSES",b.hazmat,!!b.hazmat),criticalCard("🚪","ACCÈS POMPIER",b.access)].join(""):criticalCard("ℹ️","PRÉPLAN","Aucun bâtiment à risque enregistré à proximité"));
     $("assistantHydrants").innerHTML=nearest.map((p,i)=>`<article class="assistant-hydrant ${i===0?'recommended':''}"><div class="assistant-rank">${i+1}</div><div><strong>${esc(p.name||"Borne")}</strong><span>${esc(p.address||"Adresse non inscrite")}</span><small>${flowLabel(p)} · ${fmt(p.d)} · ${p.status==="restricted"?"À inspecter":"Disponible"}</small></div><button data-assistant-hydrant="${esc(p.id)}" class="secondary small">Carte</button></article>`).join("")||"<p>Aucune borne disponible.</p>";
     $("assistantPreplanPanel").classList.toggle("hidden",!b);if(b)$("assistantPreplanSummary").innerHTML=`<div class="assistant-summary"><strong>${esc(b.name)}</strong><span>Risque ${esc(b.risk||"non défini")} · ${esc(String(b.floors||"?"))} étage(s)</span><p>${esc(b.attackSide||b.notes||"Consultez le préplan complet pour les détails opérationnels.")}</p></div>`;
   }
-  function start(a){active=a;$("assistantAddress").value=a.adresse;I.selectAddress(a,false);I.showView("assistant");render()}
+  function start(a,meta={}){active={...a,...meta};$("assistantAddress").value=a.adresse;I.selectAddress(a,false);I.showView("assistant");render()}
   function suggestions(){const q=$("assistantAddress").value.trim();if(q.length<2){$("assistantSuggestions").innerHTML="";return}const nq=I.addressNorm(q);const list=I.getAddresses().filter(a=>I.addressNorm(a.adresse).includes(nq)).slice(0,8);$("assistantSuggestions").innerHTML=list.map((a,i)=>`<button type="button" data-assistant-address="${i}"><strong>${esc(a.adresse)}</strong></button>`).join("");$("assistantSuggestions")._items=list}
+
+  function cleanSms(text){return String(text||"").replace(/https?:\/\/\S+/gi," ").replace(/[()]/g," ").replace(/\s+/g," ").trim()}
+  function findAddressInSms(text){
+    const addresses=I.getAddresses();
+    if(!addresses.length)return null;
+    const cleaned=cleanSms(text);
+    const normalized=I.addressNorm(cleaned);
+    let best=null,bestScore=-1;
+    for(const a of addresses){
+      const full=I.addressNorm(a.adresse||"");
+      if(!full)continue;
+      let score=0;
+      if(normalized.includes(full))score=10000+full.length;
+      else {
+        const parts=full.split(" ").filter(Boolean);
+        const number=parts.find(x=>/^\d+[a-z]?$/.test(x));
+        const words=parts.filter(x=>x!==number&&x.length>1);
+        if(number&&new RegExp(`(^|\\s)${number}(?=\\s|$)`).test(normalized))score+=500;
+        score+=words.filter(w=>normalized.includes(w)).length*40;
+        if(words.length&&words.every(w=>normalized.includes(w)))score+=1000;
+      }
+      if(score>bestScore){bestScore=score;best=a}
+    }
+    return bestScore>=500?best:null;
+  }
+  function parseDispatchSms(text){
+    const raw=String(text||"").trim();
+    const cleaned=cleanSms(raw);
+    const address=findAddressInSms(cleaned);
+    let callType="";
+    if(address){
+      const idx=I.addressNorm(cleaned).indexOf(I.addressNorm(address.adresse));
+      const before=idx>=0?cleaned.slice(0,Math.max(0,idx)):cleaned;
+      callType=before.replace(/^louiseville\s+/i,"").replace(/\s+au$/i,"").trim();
+    }
+    if(!callType){
+      const m=cleaned.match(/^Louiseville\s+(.+?)\s+(?:Au|au)\s+\d+/i);
+      callType=m?.[1]?.trim()||"Appel de répartition";
+    }
+    const alarm=(cleaned.match(/(?:1\s*(?:ERE|RE)|2\s*(?:E|EME)|3\s*(?:E|EME))\s+ALARME(?:\s+CAS\s+[^,.]+)?/i)||cleaned.match(/CAS\s+[^,.]+/i)||[])[0]||"";
+    return {raw,address,callType,alarmLevel:alarm};
+  }
+  function showDispatchPreview(parsed){
+    const box=$("dispatchPreview");
+    box.classList.remove("hidden");
+    box.innerHTML=`<strong>${parsed.address?"✅ Appel détecté":"⚠️ Adresse non reconnue"}</strong><span><b>Nature :</b> ${esc(parsed.callType||"Non détectée")}</span><span><b>Adresse :</b> ${esc(parsed.address?.adresse||"Aucune correspondance dans la banque")}</span>${parsed.alarmLevel?`<span><b>Niveau :</b> ${esc(parsed.alarmLevel)}</span>`:""}`;
+  }
+  function importDispatchSms(text){
+    const parsed=parseDispatchSms(text);
+    showDispatchPreview(parsed);
+    if(!parsed.address){I.toast("Adresse non reconnue. Vérifiez le SMS ou entrez l’adresse manuellement.");return false}
+    start(parsed.address,{callType:parsed.callType,alarmLevel:parsed.alarmLevel,dispatchRaw:parsed.raw,startedAt:new Date().toISOString()});
+    $("smsImportCard").open=false;
+    I.toast("Appel actif créé à partir du SMS.");
+    return true;
+  }
+
   $("assistantAddress").addEventListener("input",suggestions);
   document.addEventListener("click",e=>{const a=e.target.closest("[data-assistant-address]");if(a){const item=$("assistantSuggestions")._items?.[Number(a.dataset.assistantAddress)];if(item)start(item)}const h=e.target.closest("[data-assistant-hydrant]");if(h){const p=I.getHydrants().find(x=>x.id===h.dataset.assistantHydrant);if(p){I.showView("map");I.map.setView([p.lat,p.lng],18);I.state.markers.get(p.id)?.openPopup()}}});
   $("assistantLaunch").onclick=()=>{const q=$("assistantAddress").value.trim();const nq=I.addressNorm(q);const a=I.getAddresses().find(x=>I.addressNorm(x.adresse)===nq)||I.getAddresses().find(x=>I.addressNorm(x.adresse).includes(nq));a?start(a):I.toast("Adresse introuvable dans la banque de Louiseville.")};
   $("assistantUseActive").onclick=()=>I.state.selected?start(I.state.selected):I.toast("Sélectionnez d’abord une adresse sur la carte.");
+  $("pasteDispatchSms").onclick=async()=>{try{const text=await navigator.clipboard.readText();$("dispatchSms").value=text;showDispatchPreview(parseDispatchSms(text))}catch(e){I.toast("Maintenez le doigt dans la zone de texte, puis choisissez Coller.");$("dispatchSms").focus()}};
+  $("analyzeDispatchSms").onclick=()=>importDispatchSms($("dispatchSms").value);
+  $("dispatchSms").addEventListener("input",()=>{const t=$("dispatchSms").value.trim();if(t.length>10)showDispatchPreview(parseDispatchSms(t));else $("dispatchPreview").classList.add("hidden")});
   $("assistantNavigate").onclick=()=>active&&window.fireMapNavigation?.start(active);
   $("assistantBackMap").onclick=()=>I.showView("map");
   $("assistantShowMap").onclick=()=>{if(!active)return;I.showView("map");const pts=[[active.lat,active.lng],...nearest.slice(0,3).map(p=>[p.lat,p.lng])];I.map.fitBounds(pts,{padding:[45,45]})};
   $("assistantOpenPreplan").onclick=()=>matchedBuilding&&window.fireMapPreplans?.openPreplanById(matchedBuilding.id);
   $("assistantEnd").onclick=()=>{active=null;matchedBuilding=null;nearest=[];I.clearIntervention();$("assistantDashboard").classList.add("hidden");$("assistantEmpty").classList.remove("hidden");$("assistantAddress").value="";I.showView("map")};
+
+  window.fireMapDispatch={parse:parseDispatchSms,importText:importDispatchSms};
+  window.addEventListener("load",()=>{
+    const params=new URLSearchParams(location.search);
+    const shared=params.get("appel")||params.get("sms")||params.get("text");
+    if(shared){I.showView("assistant");$("smsImportCard").open=true;$("dispatchSms").value=shared;setTimeout(()=>importDispatchSms(shared),350);history.replaceState({},"",location.pathname)}
+  });
 })();
