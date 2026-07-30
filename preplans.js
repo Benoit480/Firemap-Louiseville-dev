@@ -34,14 +34,49 @@
     if(e.target.closest("[data-close-preplan]"))$("preplanDialog").close();
   },true);
   $("closeChoice").onclick=()=>{$("addChoiceDialog").close();pendingMapPoint=null};$("chooseHydrant").onclick=()=>{$("addChoiceDialog").close();I.openHydrantForm();pendingMapPoint=null};$("chooseBuilding").onclick=()=>{$("addChoiceDialog").close();openForm();pendingMapPoint=null};$("addBuildingTop").onclick=()=>openForm();$("closeBuildingModal").onclick=$("cancelBuilding").onclick=()=>$("buildingDialog").close();$("buildingForm").onsubmit=e=>{e.preventDefault();save()};$("deleteBuilding").onclick=remove;$("buildingSearch").oninput=renderList;$("riskFilter").onchange=renderList;$("buildingToggle").onchange=e=>e.target.checked?layer.addTo(I.map):I.map.removeLayer(layer);
-  // Double-clic sur ordinateur et double-toucher sur téléphone : ajout rapide à la position choisie.
-  I.map.doubleClickZoom.disable();
-  I.map.on("dblclick",e=>{
-    if(document.querySelector("dialog[open]"))return;
-    const point={lat:e.latlng.lat,lng:e.latlng.lng};
-    openChoice(point);
-    I.toast("Position choisie : ajoutez une borne ou un bâtiment.");
-  });
+  // Mode édition sécuritaire : maintenir 1 seconde sur la carte pour ajouter un élément.
+  const editBtn=$("editModeBtn"), mapContainer=I.map.getContainer();
+  let editMode=false, holdTimer=null, holdStart=null, holdPointerId=null, holdTriggered=false;
+  function setEditMode(enabled){
+    editMode=Boolean(enabled);
+    editBtn.setAttribute("aria-pressed",String(editMode));
+    editBtn.textContent=editMode?"✏️ Édition : OUI":"✏️ Édition : NON";
+    editBtn.classList.toggle("active",editMode);
+    mapContainer.classList.toggle("map-edit-mode",editMode);
+    cancelHold();
+    I.toast(editMode?"Mode édition activé : maintenez 1 seconde sur la carte.":"Mode consultation activé.");
+  }
+  function cancelHold(){
+    if(holdTimer){clearTimeout(holdTimer);holdTimer=null}
+    holdStart=null;holdPointerId=null;holdTriggered=false;
+    mapContainer.classList.remove("holding-to-add");
+  }
+  function ignoredTarget(target){return Boolean(target.closest(".leaflet-control,.leaflet-marker-icon,.leaflet-popup,.map-fab,button,a,input,label"))}
+  function pointFromClient(x,y){const r=mapContainer.getBoundingClientRect();return I.map.containerPointToLatLng(L.point(x-r.left,y-r.top))}
+  editBtn.addEventListener("click",()=>setEditMode(!editMode));
+  mapContainer.addEventListener("pointerdown",e=>{
+    if(!editMode||document.querySelector("dialog[open]")||ignoredTarget(e.target)||e.button>0)return;
+    cancelHold();
+    holdPointerId=e.pointerId;holdStart={x:e.clientX,y:e.clientY};
+    mapContainer.classList.add("holding-to-add");
+    holdTimer=setTimeout(()=>{
+      holdTimer=null;holdTriggered=true;
+      const latlng=pointFromClient(holdStart.x,holdStart.y);
+      navigator.vibrate?.(35);
+      openChoice({lat:latlng.lat,lng:latlng.lng});
+      I.toast("Position choisie : ajoutez une borne ou un bâtiment.");
+      mapContainer.classList.remove("holding-to-add");
+    },1000);
+  },{passive:true});
+  mapContainer.addEventListener("pointermove",e=>{
+    if(e.pointerId!==holdPointerId||!holdStart)return;
+    if(Math.hypot(e.clientX-holdStart.x,e.clientY-holdStart.y)>12)cancelHold();
+  },{passive:true});
+  ["pointerup","pointercancel","pointerleave"].forEach(type=>mapContainer.addEventListener(type,e=>{
+    if(e.pointerId===holdPointerId&&!holdTriggered)cancelHold();
+    else if(e.pointerId===holdPointerId){holdStart=null;holdPointerId=null;holdTriggered=false}
+  },{passive:true}));
+  mapContainer.addEventListener("contextmenu",e=>{if(editMode){e.preventDefault();e.stopPropagation()}},{passive:false});
 
   const connect=()=>{const c=window.fireMapCloud;if(!c?.configured||!c.subscribeBuildings){setBuildings([]);return}c.subscribeBuildings(setBuildings,e=>{console.error(e);I.toast("Erreur de synchronisation des bâtiments.")})};if(window.fireMapCloud)connect();else window.addEventListener("firemap-cloud-ready",connect,{once:true});
 })();
