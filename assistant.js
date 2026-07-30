@@ -22,50 +22,74 @@
   function suggestions(){const q=$("assistantAddress").value.trim();if(q.length<2){$("assistantSuggestions").innerHTML="";return}const nq=I.addressNorm(q);const list=I.getAddresses().filter(a=>I.addressNorm(a.adresse).includes(nq)).slice(0,8);$("assistantSuggestions").innerHTML=list.map((a,i)=>`<button type="button" data-assistant-address="${i}"><strong>${esc(a.adresse)}</strong></button>`).join("");$("assistantSuggestions")._items=list}
 
   function cleanSms(text){return String(text||"").replace(/https?:\/\/\S+/gi," ").replace(/[()]/g," ").replace(/\s+/g," ").trim()}
-  function findAddressInSms(text){
-    const addresses=I.getAddresses();
-    if(!addresses.length)return null;
+  function addressBase(address){
+    return String(address?.adresse||"")
+      .replace(/,\s*Louiseville(?:\s+[A-Z]\d[A-Z]\s?\d[A-Z]\d)?\s*$/i,"")
+      .trim();
+  }
+  function extractDispatchAddress(text){
     const cleaned=cleanSms(text);
-    const normalized=I.addressNorm(cleaned);
-    let best=null,bestScore=-1;
-    for(const a of addresses){
-      const full=I.addressNorm(a.adresse||"");
-      if(!full)continue;
-      let score=0;
-      if(normalized.includes(full))score=10000+full.length;
-      else {
-        const parts=full.split(" ").filter(Boolean);
-        const number=parts.find(x=>/^\d+[a-z]?$/.test(x));
-        const words=parts.filter(x=>x!==number&&x.length>1);
-        if(number&&new RegExp(`(^|\\s)${number}(?=\\s|$)`).test(normalized))score+=500;
-        score+=words.filter(w=>normalized.includes(w)).length*40;
-        if(words.length&&words.every(w=>normalized.includes(w)))score+=1000;
-      }
-      if(score>bestScore){bestScore=score;best=a}
+    const patterns=[
+      /\bAU\s+(.+?)\s*,\s*LOUISEVILLE\b/i,
+      /\bA[UÙ]\s+(.+?)\s*,\s*LOUISEVILLE\b/i,
+      /\b(?:ADRESSE|LIEU)\s*[:\-]\s*(.+?)\s*,\s*LOUISEVILLE\b/i
+    ];
+    for(const pattern of patterns){
+      const match=cleaned.match(pattern);
+      if(match?.[1])return match[1].replace(/\s+/g," ").trim();
     }
-    return bestScore>=500?best:null;
+    return "";
+  }
+  function findAddressByExtracted(extracted){
+    if(!extracted)return null;
+    const addresses=I.getAddresses();
+    const target=I.addressNorm(extracted);
+    if(!target)return null;
+    const exact=addresses.find(a=>I.addressNorm(addressBase(a))===target);
+    if(exact)return exact;
+    const targetParts=target.split(" ").filter(Boolean);
+    const civic=targetParts.find(x=>/^\d+[a-z]?$/.test(x));
+    const streetWords=targetParts.filter(x=>x!==civic);
+    const scored=addresses.map(a=>{
+      const base=I.addressNorm(addressBase(a));
+      const parts=base.split(" ").filter(Boolean);
+      const number=parts.find(x=>/^\d+[a-z]?$/.test(x));
+      let score=0;
+      if(civic&&number===civic)score+=2000;
+      else if(civic)score-=2000;
+      for(const word of streetWords){if(parts.includes(word))score+=120;}
+      if(streetWords.length&&streetWords.every(w=>parts.includes(w)))score+=1200;
+      if(base.includes(target)||target.includes(base))score+=800;
+      return {a,score};
+    }).sort((x,y)=>y.score-x.score);
+    return scored[0]?.score>=2000?scored[0].a:null;
+  }
+  function findAddressInSms(text){
+    const extracted=extractDispatchAddress(text);
+    const strict=findAddressByExtracted(extracted);
+    if(strict)return {address:strict,extracted};
+    return {address:null,extracted};
   }
   function parseDispatchSms(text){
     const raw=String(text||"").trim();
     const cleaned=cleanSms(raw);
-    const address=findAddressInSms(cleaned);
+    const found=findAddressInSms(cleaned);
+    const address=found.address;
+    const extractedAddress=found.extracted;
     let callType="";
-    if(address){
-      const idx=I.addressNorm(cleaned).indexOf(I.addressNorm(address.adresse));
-      const before=idx>=0?cleaned.slice(0,Math.max(0,idx)):cleaned;
-      callType=before.replace(/^louiseville\s+/i,"").replace(/\s+au$/i,"").trim();
-    }
-    if(!callType){
-      const m=cleaned.match(/^Louiseville\s+(.+?)\s+(?:Au|au)\s+\d+/i);
-      callType=m?.[1]?.trim()||"Appel de répartition";
-    }
+    const natureMatch=cleaned.match(/^\s*Louiseville\s+(.+?)\s+A[UÙ]\s+/i);
+    if(natureMatch?.[1])callType=natureMatch[1].trim();
+    if(!callType)callType="Appel de répartition";
     const alarm=(cleaned.match(/(?:1\s*(?:ERE|RE)|2\s*(?:E|EME)|3\s*(?:E|EME))\s+ALARME(?:\s+CAS\s+[^,.]+)?/i)||cleaned.match(/CAS\s+[^,.]+/i)||[])[0]||"";
-    return {raw,address,callType,alarmLevel:alarm};
+    const vehicles=[];
+    const tail=cleaned.match(/CAS\s+\d+\s*[,;]?\s*((?:\d{2,4}\s*[,;]\s*)*\d{2,4})/i)?.[1]||"";
+    for(const value of tail.split(/[,;]\s*/)){if(/^\d{2,4}$/.test(value)&&!vehicles.includes(value))vehicles.push(value)}
+    return {raw,address,extractedAddress,callType,alarmLevel:alarm,vehicles};
   }
   function showDispatchPreview(parsed){
     const box=$("dispatchPreview");
     box.classList.remove("hidden");
-    box.innerHTML=`<strong>${parsed.address?"✅ Appel détecté":"⚠️ Adresse non reconnue"}</strong><span><b>Nature :</b> ${esc(parsed.callType||"Non détectée")}</span><span><b>Adresse :</b> ${esc(parsed.address?.adresse||"Aucune correspondance dans la banque")}</span>${parsed.alarmLevel?`<span><b>Niveau :</b> ${esc(parsed.alarmLevel)}</span>`:""}`;
+    box.innerHTML=`<strong>${parsed.address?"✅ Appel détecté":"⚠️ Adresse à vérifier"}</strong><span><b>Nature :</b> ${esc(parsed.callType||"Non détectée")}</span><span><b>Adresse extraite :</b> ${esc(parsed.extractedAddress||"Non détectée")}</span><span><b>Adresse confirmée :</b> ${esc(parsed.address?.adresse||"Aucune correspondance exacte dans la banque")}</span>${parsed.alarmLevel?`<span><b>Niveau :</b> ${esc(parsed.alarmLevel)}</span>`:""}${parsed.vehicles?.length?`<span><b>Véhicules :</b> ${esc(parsed.vehicles.join(" • "))}</span>`:""}`;
   }
   function importDispatchSms(text){
     const parsed=parseDispatchSms(text);
