@@ -137,3 +137,117 @@ dialog form{background:#0b1017!important}
 .favorites-card .muted {
   color:#94a3b8 !important;
 }
+
+/* V20.0.3 — Thème sombre uniforme, sans panneaux blancs */
+:root{
+  --ink:#f8fafc;
+  --muted:#94a3b8;
+  --bg:#02060b;
+  --card:#0b1017;
+  --line:#263244;
+  --shadow:0 14px 34px rgba(0,0,0,.42);
+}
+html,body{background:#02060b!important;color:#f8fafc!important}
+main,.view{background:transparent!important}
+
+.search-card,.map-card,.intervention-card,.card-item,.stats-grid>div,
+.recent-card,.favorites-card,.assistant-address-card,.assistant-panel,
+.assistant-alert-head,.assistant-empty,.sms-import-card,.navigation-panel,
+.station-card,.vehicle-toolbar,.vehicle-card,.preplan-section,
+.choice-card,.filter-row,.nearest-panel{
+  background:#0b1017!important;
+  border-color:#263244!important;
+  color:#f8fafc!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.36)!important;
+}
+
+/* Historique et favoris */
+.recent-card,.favorites-card,
+section .recent-card,
+#view-map .recent-card{
+  background:#0b1017!important;
+  background-color:#0b1017!important;
+}
+.recent-list{background:transparent!important}
+.recent-item,.favorite-item>button:first-child,
+#recentInterventions .recent-item,
+#favoritePlaces .favorite-item>button:first-child{
+  background:#060b12!important;
+  background-color:#060b12!important;
+  color:#f8fafc!important;
+  border:1px solid #263244!important;
+}
+.recent-head,.recent-head *{background:transparent!important}
+
+/* Recherche, formulaires et sélecteurs */
+.search-row,.search-row input,.search-row button,
+.filter-row input,.filter-row select,
+.form-grid input,.form-grid select,.form-grid textarea,
+.assistant-address-row input,.sms-import-body textarea,
+input,select,textarea{
+  background:#070c13!important;
+  color:#f8fafc!important;
+  border-color:#334155!important;
+}
+input::placeholder,textarea::placeholder{color:#6f7c91!important}
+option{background:#0b1017!important;color:#f8fafc!important}
+
+/* Résultats, ressources proches et listes */
+.result-item,.nearest-item,.assistant-hydrant,
+.navigation-stats>div,.navigation-itinerary,
+.dispatch-preview{
+  background:#070c13!important;
+  color:#f8fafc!important;
+  border-color:#263244!important;
+}
+.secondary,.mini-map{
+  background:#172131!important;
+  color:#f8fafc!important;
+  border:1px solid #334155!important;
+}
+.danger,.icon-close{
+  background:#2a0f14!important;
+  color:#fecaca!important;
+  border:1px solid #7f1d1d!important;
+}
+
+/* Fenêtres modales et préplans */
+dialog,dialog form,.building-dialog,.preplan-dialog,.vehicle-dialog{
+  background:#080d14!important;
+  color:#f8fafc!important;
+}
+dialog::backdrop{background:rgba(0,0,0,.78)!important}
+.modal-head,.modal-actions,.form-section,.preplan-actions,.preplan-grid{
+  background:transparent!important;
+}
+
+/* Navigation inférieure et tiroir */
+.bottom-nav{
+  background:rgba(3,7,12,.97)!important;
+  border-top-color:#263244!important;
+}
+.bottom-nav button{color:#94a3b8!important}
+.bottom-nav button.active{color:#ef4444!important}
+.bottom-nav .add-main{color:#fff!important;background:#c81e1e!important}
+.drawer{background:#080d14!important}
+
+/* Cartes Leaflet */
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{
+  background:#080d14!important;
+  color:#f8fafc!important;
+}
+.leaflet-control-zoom a,
+.leaflet-control-layers{
+  background:#080d14!important;
+  color:#f8fafc!important;
+  border-color:#334155!important;
+}
+.leaflet-control-zoom a:hover{background:#111827!important}
+
+/* Texte */
+h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
+.muted,.card-content p,.stats-grid span,.result-item small,
+.nearest-info span,.navigation-status,.assistant-empty p{
+  color:#94a3b8!important;
+}
+.text-btn{background:transparent!important;color:#ef4444!important}
