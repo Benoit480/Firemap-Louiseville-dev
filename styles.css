@@ -273,3 +273,16 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
 .prevention-photo-summary img{width:100%;height:82px;object-fit:cover;border-radius:10px;border:1px solid #334155}
 .prevention-check-grid .prevention-photo-item:has(input:checked){border-color:#dc2626}.risk-checks .prevention-photo-item:has(input:checked){border-color:#f97316;background:#24140b}
 @media(max-width:640px){.photo-action{min-width:calc(50% - 4px);font-size:.76rem;padding:9px 5px}}
+
+/* V20.1.2 — Prévention = préplan opérationnel */
+.preplan-prevention-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.preplan-from-prevention{border-color:#d62828!important;box-shadow:0 0 0 1px rgba(214,40,40,.2) inset}
+.preplan-check-list{margin:10px 0 0;padding-left:1.3rem;display:grid;gap:8px}
+.preplan-check-list li{color:#f3f6fb}
+.preplan-unconfirmed{color:#8f9bad!important}
+.preplan-alert{border-color:#ff9500!important;background:rgba(255,149,0,.08)!important}
+.preplan-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.preplan-photo-card{display:block;position:relative;border:1px solid #26344d;border-radius:14px;overflow:hidden;background:#05080f;color:#fff;text-decoration:none}
+.preplan-photo-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.preplan-photo-card span{display:block;padding:8px 10px;font-size:.82rem;font-weight:700}
+@media(min-width:700px){.preplan-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}

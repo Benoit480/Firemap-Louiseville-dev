@@ -88,17 +88,29 @@
   async function save(e){e.preventDefault();const r=formRecord();records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Visite de prévention synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
   async function flush(){const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)return;for(const [id,r] of Object.entries(pending()))try{await c.savePrevention(r);clearPending(id)}catch(e){console.error(e)}}
   function connect(){const c=window.fireMapCloud;if(!c?.configured||!c.subscribePrevention){render();return}if(cloudUnsub)cloudUnsub();cloudUnsub=c.subscribePrevention(items=>{const p=pending();records=new Map(items.map(x=>{const r=canonical(x);return[r.id,r]}));Object.values(p).forEach(x=>{const r=canonical(x);records.set(r.id,r)});persist();render();flush()},e=>{console.error(e);I.toast("Prévention en mode local.")});flush()}
-  function preplanHtml(id){const b=buildings().find(x=>String(x.id)===String(id)),r=records.get(String(id));if(!r)return '<section class="preplan-section prevention-summary"><h3>🛡️ Prévention</h3><p>Aucune visite de prévention enregistrée.</p></section>';const s=score(r,b),risks=riskNames(r);return `<section class="preplan-section prevention-summary"><h3>🛡️ Prévention — ${s}%</h3><div class="score-track"><span class="${scoreState(s)}" style="width:${s}%"></span></div><p><strong>Dernière visite :</strong> ${esc(r.visitDate||"Non inscrite")} ${r.inspector?`— ${esc(r.inspector)}`:""}</p>${r.checks.fdcAccessible?'<p>✅ FDC déclarée accessible</p>':'<p>⚠️ Accessibilité de la FDC non confirmée</p>'}${risks.length?`<p><strong>Risques :</strong> ${esc(risks.join(", "))}</p>`:""}${r.electricalNotes?`<p><strong>Électricité :</strong> ${esc(r.electricalNotes)}</p>`:""}${r.gasNotes?`<p><strong>Gaz :</strong> ${esc(r.gasNotes)}</p>`:""}${r.fdcNotes?`<p><strong>FDC :</strong> ${esc(r.fdcNotes)}</p>`:""}${r.observations?`<p><strong>Observations :</strong> ${esc(r.observations)}</p>`:""}${Object.values(r.photosByCategory||{}).flat().length?`<div class="prevention-photo-summary">${Object.entries(r.photosByCategory||{}).flatMap(([category,photos])=>(photos||[]).slice(0,2).map(photo=>`<a href="${esc(photo.url)}" target="_blank" rel="noopener"><img src="${esc(photo.url)}" alt="Photo ${esc(category)}"></a>`)).join("")}</div>`:""}</section>`}
-  function setupCategoryPhotoControls(){
-    Object.entries(photoCategories).forEach(([inputId,meta])=>{
-      const checkbox=$(inputId);if(!checkbox||checkbox.closest(".prevention-photo-item"))return;
-      const label=checkbox.closest("label");if(!label)return;
-      const wrapper=document.createElement("div");wrapper.className="prevention-photo-item";wrapper.dataset.category=meta.key;
-      label.parentNode.insertBefore(wrapper,label);wrapper.appendChild(label);
-      const controls=document.createElement("div");controls.className="category-photo-controls";
-      controls.innerHTML=`<button type="button" class="photo-action camera" data-photo-camera="${meta.key}">📷 Prendre une photo</button><button type="button" class="photo-action import" data-photo-import="${meta.key}">🖼️ Importer</button><input class="category-photo-input" data-photo-input="${meta.key}" data-source="camera" type="file" accept="image/*" capture="environment"><input class="category-photo-input" data-photo-input="${meta.key}" data-source="library" type="file" accept="image/*" multiple><div class="category-photo-gallery" data-photo-gallery="${meta.key}"></div>`;
-      wrapper.appendChild(controls);
-    });
+  function preplanHtml(id){
+    const b=buildings().find(x=>String(x.id)===String(id)),r=records.get(String(id));
+    if(!r)return '<section class="preplan-section prevention-summary"><h3>🛡️ Préplan de prévention</h3><p>Aucune visite de prévention enregistrée.</p></section>';
+    const sc=score(r,b), risks=riskNames(r);
+    const checkMap=[
+      ["electricalPanel","⚡","Panneau électrique localisé"],
+      ["electricalEntrance","⚡","Entrée électrique identifiée"],
+      ["gasEntrance","🔥","Entrée / coupure de gaz identifiée"],
+      ["waterValve","💧","Valve d’eau identifiée"],
+      ["fdcAccessible","🚒","FDC accessible"],
+      ["sprinklers","💦","Gicleurs présents"],
+      ["generator","🔋","Génératrice identifiée"],
+      ["elevator","🛗","Ascenseur"],
+      ["dryStandpipe","🧯","Colonne sèche / humide"]
+    ];
+    const checked=checkMap.filter(([k])=>r.checks[k]).map(([,i,l])=>`<li>${i} ${esc(l)}</li>`).join("");
+    const unchecked=checkMap.filter(([k])=>!r.checks[k]).map(([,i,l])=>`<li class="preplan-unconfirmed">${i} ${esc(l)} — non confirmé</li>`).join("");
+    const photos=Object.entries(r.photosByCategory||{}).flatMap(([category,list])=>(list||[]).map(photo=>({category,photo}))).map(({category,photo})=>{
+      const label=Object.values(photoCategories).find(x=>x.key===category)?.label||category;
+      return `<a class="preplan-photo-card" href="${esc(photo.url)}" target="_blank" rel="noopener"><img src="${esc(photo.url)}" alt="${esc(label)}" loading="lazy"><span>${esc(label)}</span></a>`;
+    }).join("");
+    const risksHtml=risks.length?`<section class="preplan-section preplan-alert"><h3>☣️ Risques particuliers</h3><p>${esc(risks.join(", "))}</p>${r.hazmatNotes?`<p>${esc(r.hazmatNotes)}</p>`:""}</section>`:"";
+    return `<section class="preplan-section prevention-summary preplan-from-prevention"><div class="preplan-prevention-title"><h3>🛡️ Préplan issu de la prévention</h3><span class="score-badge ${scoreState(sc)}">${sc}%</span></div><div class="score-track"><span class="${scoreState(sc)}" style="width:${sc}%"></span></div><p><strong>Dernière visite :</strong> ${esc(r.visitDate||"Non inscrite")} ${r.inspector?`— ${esc(r.inspector)}`:""}</p>${r.nextReview?`<p><strong>Prochaine révision :</strong> ${esc(r.nextReview)}</p>`:""}${r.occupancy?`<p><strong>Occupation maximale :</strong> ${esc(String(r.occupancy))}</p>`:""}${r.accessCode?`<p><strong>Code d’accès :</strong> ${esc(r.accessCode)}</p>`:""}</section><section class="preplan-section"><h3>✅ Éléments opérationnels vérifiés</h3><ul class="preplan-check-list">${checked||"<li>Aucun élément confirmé.</li>"}</ul>${unchecked?`<details><summary>Éléments non confirmés</summary><ul class="preplan-check-list">${unchecked}</ul></details>`:""}</section>${risksHtml}${r.electricalNotes?`<section class="preplan-section"><h3>⚡ Électricité</h3><p>${esc(r.electricalNotes)}</p></section>`:""}${r.gasNotes?`<section class="preplan-section"><h3>🔥 Gaz / propane</h3><p>${esc(r.gasNotes)}</p></section>`:""}${r.fdcNotes?`<section class="preplan-section"><h3>🚒 FDC</h3><p>${esc(r.fdcNotes)}</p></section>`:""}${r.accessNotes?`<section class="preplan-section"><h3>🚪 Accès</h3><p>${esc(r.accessNotes)}</p></section>`:""}${r.observations?`<section class="preplan-section"><h3>📝 Observations de prévention</h3><p>${esc(r.observations).replace(/\n/g,"<br>")}</p></section>`:""}${photos?`<section class="preplan-section"><h3>📷 Photos opérationnelles</h3><div class="preplan-photo-grid">${photos}</div></section>`:""}`;
   }
   function renderPhotoGallery(category){
     const target=document.querySelector(`[data-photo-gallery="${category}"]`);if(!target)return;

@@ -92,7 +92,27 @@
   },{passive:true}));
   mapContainer.addEventListener("contextmenu",e=>{if(editMode){e.preventDefault();e.stopPropagation()}},{passive:false});
 
-  window.fireMapPreplans={getBuildings:()=>buildings.slice(),openPreplanById:id=>openPreplan(buildings.find(b=>b.id===id)),showBuildingOnMap:id=>{const b=buildings.find(x=>x.id===id);if(b)showOnMap(b)}};
+  async function updateBuildingFromPrevention(id, patch={}){
+    const index=buildings.findIndex(b=>String(b.id)===String(id));
+    if(index<0) return null;
+    const merged=canonical({...buildings[index],...patch,id:buildings[index].id});
+    buildings[index]=merged;
+    queueSave(merged);
+    setBuildings(buildings);
+    const c=window.fireMapCloud;
+    try{
+      if(!c?.configured||!c.saveBuilding) throw new Error("Firebase pas encore prêt");
+      await c.saveBuilding(merged);
+      clearPendingSave(merged.id);
+    }catch(e){console.warn("Préplan mis à jour localement; synchronisation en attente.",e)}
+    return merged;
+  }
+  window.fireMapPreplans={
+    getBuildings:()=>buildings.slice(),
+    openPreplanById:id=>openPreplan(buildings.find(b=>b.id===id)),
+    showBuildingOnMap:id=>{const b=buildings.find(x=>x.id===id);if(b)showOnMap(b)},
+    updateBuildingFromPrevention
+  };
   window.dispatchEvent(new Event("firemap-preplans-ready"));
 
   async function flushPending(c){
