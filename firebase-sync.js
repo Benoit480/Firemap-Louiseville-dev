@@ -32,28 +32,9 @@
       subscribeBuildings(ok, fail) { return fs.onSnapshot(fs.collection(db, "batiments"), s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))), fail); },
       saveBuilding(p) { const data={...p,id:String(p.id),lat:Number(p.lat),lng:Number(p.lng),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"batiments",String(p.id)),data,{merge:true}); },
       deleteBuilding(id) { return fs.deleteDoc(fs.doc(db,"batiments",String(id))); },
-      subscribePrevention(ok, fail) {
-        return fs.onSnapshot(fs.collection(db, "batiments"), s => ok(
-          s.docs.map(d => {
-            const data = d.data() || {};
-            return data.prevention ? { id: d.id, buildingId: d.id, ...data.prevention } : null;
-          }).filter(Boolean)
-        ), fail);
-      },
-      savePrevention(p) {
-        const id = String(p.buildingId || p.id);
-        const data = { ...p, id, buildingId: id, updatedAt: new Date().toISOString() };
-        return fs.setDoc(fs.doc(db, "batiments", id), {
-          prevention: data,
-          updatedAt: fs.serverTimestamp()
-        }, { merge: true });
-      },
-      deletePrevention(id) {
-        return fs.updateDoc(fs.doc(db, "batiments", String(id)), {
-          prevention: fs.deleteField(),
-          updatedAt: fs.serverTimestamp()
-        });
-      },
+      subscribePrevention(ok, fail) { return fs.onSnapshot(fs.collection(db, "prevention"), s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))), fail); },
+      savePrevention(p) { const data={...p,id:String(p.id),buildingId:String(p.buildingId||p.id),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"prevention",String(p.id)),data,{merge:true}); },
+      deletePrevention(id) { return fs.deleteDoc(fs.doc(db,"prevention",String(id))); },
       async uploadPreventionPhoto(buildingId, category, file) {
         const safeName = String(file.name || "photo.jpg").replace(/[^a-zA-Z0-9._-]+/g, "-");
         const photoId = (crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random().toString(16).slice(2));
