@@ -26,8 +26,8 @@
     <button data-view="assistant" class="drawer-link">🚨 Assistant d’intervention</button>
     <button data-view="hydrants" class="drawer-link">🚰 Bornes-fontaines</button>
     <button id="drawerAdd" class="drawer-link">➕ Ajouter</button>
-    <button data-view="preplans" class="drawer-link">🏢 Préplans / bâtiments</button>
-    <button data-view="prevention" class="drawer-link">🛡️ Mode prévention</button>
+    <button data-view="preplans" class="drawer-link">🏢 Bâtiments</button>
+    
     <button data-view="vehicles" class="drawer-link">🚒 Caserne et véhicules</button>
     <button data-view="inspections" class="drawer-link">✅ Inspections</button>
     <button data-view="search" class="drawer-link">🔎 Recherche d’adresse</button>
@@ -124,13 +124,13 @@
 
 
     <section id="view-preplans" class="view">
-      <div class="section-title"><div><small>PRÉVENTION ET INTERVENTION</small><h2>Préplans et bâtiments à risque</h2></div><button id="addBuildingTop" class="primary small">＋ Ajouter</button></div>
+      <div class="section-title"><div><small>PRÉVENTION ET OPÉRATIONS</small><h2>🏢 Bâtiments</h2></div><button id="addBuildingTop" class="primary small">＋ Ajouter</button></div>
       <div class="filter-row"><input id="buildingSearch" type="search" placeholder="Rechercher nom, adresse, risque…"><select id="riskFilter"><option value="">Tous les risques</option><option value="low">Faible</option><option value="medium">Moyen</option><option value="high">Élevé</option><option value="very_high">Très élevé</option></select></div>
       <div id="buildingList" class="card-list"></div>
     </section>
 
 
-    <section id="view-prevention" class="view">
+    <section id="view-prevention" class="view legacy-prevention-view">
       <div class="section-title"><div><small>VISITES ET MISE À JOUR</small><h2>🛡️ Mode prévention</h2></div><button id="preventionBackMap" class="secondary small">🗺️ Carte</button></div>
       <div id="preventionStats" class="stats-grid prevention-stats"></div>
       <div class="filter-row prevention-filters">
@@ -167,7 +167,7 @@
     <button data-view="assistant">🚨<span>Intervention</span></button>
     <button data-view="hydrants">🚰<span>Bornes</span></button>
     <button id="bottomAdd" class="add-main">＋<span>Ajouter</span></button>
-    <button data-view="preplans">🏢<span>Préplans</span></button>
+    <button data-view="preplans">🏢<span>Bâtiments</span></button>
     <button id="bottomMore">☰<span>Plus</span></button>
   </nav>
 
@@ -195,12 +195,12 @@
 
   <dialog id="addChoiceDialog" class="choice-dialog">
     <div class="modal-head"><div><small>AJOUTER SUR LA CARTE</small><h2>Que voulez-vous ajouter?</h2></div><button type="button" id="closeChoice">×</button></div>
-    <div class="choice-grid"><button id="chooseHydrant" class="choice-card"><span>🚰</span><strong>Une borne-fontaine</strong><small>Conserve le formulaire actuel</small></button><button id="chooseBuilding" class="choice-card"><span>🏢</span><strong>Un bâtiment à risque</strong><small>Créer un préplan opérationnel</small></button></div>
+    <div class="choice-grid"><button id="chooseHydrant" class="choice-card"><span>🚰</span><strong>Une borne-fontaine</strong><small>Conserve le formulaire actuel</small></button><button id="chooseBuilding" class="choice-card"><span>🏢</span><strong>Un bâtiment à risque</strong><small>Créer une fiche Bâtiment unique</small></button></div>
   </dialog>
 
   <dialog id="buildingDialog" class="building-dialog">
     <form id="buildingForm" method="dialog">
-      <div class="modal-head"><div><small>BÂTIMENT À RISQUE</small><h2 id="buildingModalTitle">Ajouter un préplan</h2></div><button type="button" id="closeBuildingModal">×</button></div>
+      <div class="modal-head"><div><small>NOUVEAU BÂTIMENT</small><h2 id="buildingModalTitle">Créer le bâtiment</h2></div><button type="button" id="closeBuildingModal">×</button></div>
       <input type="hidden" id="buildingId">
       <div class="form-section"><h3>Informations générales</h3><div class="form-grid">
         <label>Nom du bâtiment<input id="buildingName" required placeholder="Ex. École secondaire"></label>
@@ -211,7 +211,7 @@
         <label>Nombre d’étages<input id="buildingFloors" type="number" min="0" value="1"></label>
         <label>Sous-sol<select id="buildingBasement"><option value="no">Non</option><option value="yes">Oui</option><option value="partial">Partiel</option><option value="unknown">Inconnu</option></select></label>
       </div></div>
-      <div class="form-section"><h3>Préplan et opérations</h3><div class="form-grid">
+      <div class="form-section legacy-building-details"><h3>Anciennes informations</h3><div class="form-grid">
         <label class="wide">Risques particuliers<textarea id="buildingRisks" rows="3" placeholder="Construction, occupants, toiture, stockage…"></textarea></label>
         <label class="wide">FDC / prise pompier<textarea id="buildingFdc" rows="2" placeholder="Emplacement, raccord, pression…"></textarea></label>
         <label class="wide">Entrée et coupure électrique<textarea id="buildingElectrical" rows="2"></textarea></label>
@@ -220,8 +220,8 @@
         <label class="wide">Accès pompier / boîte Knox / codes<textarea id="buildingAccess" rows="2"></textarea></label>
         <label>Point de rassemblement<input id="buildingAssembly"></label><label>Côté d’attaque conseillé<input id="buildingAttackSide"></label>
       </div></div>
-      <div class="form-section"><h3>Responsable</h3><div class="form-grid"><label>Nom<input id="buildingContactName"></label><label>Téléphone<input id="buildingContactPhone" type="tel"></label></div></div>
-      <div class="form-section"><h3>Plans et photos</h3><div class="form-grid">
+      <div class="form-section legacy-building-details"><h3>Ancien responsable</h3><div class="form-grid"><label>Nom<input id="buildingContactName"></label><label>Téléphone<input id="buildingContactPhone" type="tel"></label></div></div>
+      <div class="form-section legacy-building-details"><h3>Anciens plans et photos</h3><div class="form-grid">
         <label class="wide">Lien du plan (PDF ou image)<input id="buildingPlanUrl" type="url" placeholder="https://..."><small class="field-help">Utilisez un lien accessible aux utilisateurs autorisés.</small></label>
         <label class="wide">Liens des photos<textarea id="buildingPhotoUrls" rows="3" placeholder="Un lien par ligne"></textarea></label>
         <label class="wide">Notes opérationnelles<textarea id="buildingNotes" rows="3"></textarea></label>
@@ -235,8 +235,35 @@
 
   <dialog id="preventionDialog" class="prevention-dialog">
     <form id="preventionForm" method="dialog">
-      <div class="modal-head"><div><small>MODE PRÉVENTION</small><h2 id="preventionDialogTitle">Visite du bâtiment</h2></div><button type="button" id="closePreventionDialog">×</button></div>
+      <div class="modal-head"><div><small>FICHE BÂTIMENT — PRÉVENTION ET OPÉRATIONS</small><h2 id="preventionDialogTitle">Fiche du bâtiment</h2></div><button type="button" id="closePreventionDialog">×</button></div>
       <input type="hidden" id="preventionBuildingId">
+      <div class="form-section unified-building-general">
+        <h3>🏢 Informations générales</h3>
+        <div class="form-grid">
+          <label>Nom du bâtiment<input id="ubName" required placeholder="Ex. École secondaire"></label>
+          <label>Catégorie<select id="ubCategory">
+            <option value="other">Autre</option><option value="school">École</option>
+            <option value="care">CHSLD / résidence</option><option value="industry">Industrie</option>
+            <option value="commercial">Commerce</option><option value="gas_station">Station-service</option>
+            <option value="municipal">Municipal</option><option value="hazmat">Matières dangereuses</option>
+          </select></label>
+          <label class="wide">Adresse<input id="ubAddress" required></label>
+          <label>Latitude<input id="ubLat" type="number" step="any" required></label>
+          <label>Longitude<input id="ubLng" type="number" step="any" required></label>
+          <label>Niveau de risque<select id="ubRisk">
+            <option value="low">Faible</option><option value="medium">Moyen</option>
+            <option value="high">Élevé</option><option value="very_high">Très élevé</option>
+          </select></label>
+          <label>Nombre d’étages<input id="ubFloors" type="number" min="0"></label>
+          <label>Sous-sol<select id="ubBasement">
+            <option value="no">Non</option><option value="yes">Oui</option>
+            <option value="partial">Partiel</option><option value="unknown">Inconnu</option>
+          </select></label>
+          <label>Responsable<input id="ubContactName"></label>
+          <label>Téléphone<input id="ubContactPhone" type="tel"></label>
+          <label class="wide">Courriel<input id="ubContactEmail" type="email"></label>
+        </div>
+      </div>
       <div class="prevention-score-card"><div><small>PRÉPARATION OPÉRATIONNELLE</small><strong id="preventionScoreValue">0 %</strong></div><div class="score-track"><span id="preventionScoreBar"></span></div><p id="preventionScoreLabel">Informations à compléter</p></div>
       <div class="form-section"><h3>Visite et responsable</h3><div class="form-grid">
         <label>Inspecteur<input id="preventionInspector" placeholder="Nom de l’inspecteur"></label>
@@ -277,7 +304,7 @@
         <label class="wide">Observations de la visite<textarea id="pvObservations" rows="4" placeholder="Anomalies, corrections demandées et notes de suivi"></textarea></label>
       </div></div>
       <section class="form-section"><h3>Historique des visites</h3><div id="preventionVisitHistory" class="visit-history"></div></section>
-      <div class="modal-actions"><span></span><button type="button" id="cancelPreventionDialog" class="secondary">Annuler</button><button type="submit" class="primary">Enregistrer la visite</button></div>
+      <div class="modal-actions"><span></span><button type="button" id="cancelPreventionDialog" class="secondary">Annuler</button><button type="submit" class="primary">Enregistrer la fiche</button></div>
     </form>
   </dialog>
 
@@ -318,6 +345,7 @@
   <script src="app.js"></script>
   <script src="preplans.js"></script>
   <script src="prevention.js"></script>
+  <script src="unified-buildings.js"></script>
   <script src="assistant.js"></script>
   <script src="navigation.js"></script>
   <script src="vehicles.js"></script>

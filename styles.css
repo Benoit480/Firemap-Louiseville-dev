@@ -286,3 +286,41 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
 .preplan-photo-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
 .preplan-photo-card span{display:block;padding:8px 10px;font-size:.82rem;font-weight:700}
 @media(min-width:700px){.preplan-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+/* FireMap V21 — fiche Bâtiment unique */
+.legacy-prevention-view{display:none!important}
+#buildingDialog .legacy-building-details{display:none!important}
+#buildingDialog .field-help{display:none!important}
+.unified-building-general{
+  border:1px solid #334155;
+  background:#070b12;
+}
+#preventionDialog{
+  width:min(96vw,860px);
+}
+#preventionDialog .modal-head small{color:#ff4d55}
+#preventionDialog .form-section{
+  background:#0a0f17;
+  border:1px solid #253249;
+  border-radius:16px;
+  margin:12px;
+}
+#preventionDialog .form-section h3{
+  color:#fff;
+}
+#preventionDialog input,
+#preventionDialog select,
+#preventionDialog textarea{
+  background:#05080e!important;
+  color:#fff!important;
+  border-color:#334155!important;
+}
+#preventionDialog .modal-actions{
+  position:sticky;
+  bottom:0;
+  background:rgba(8,11,16,.97);
+  border-top:1px solid #26344d;
+  padding:12px;
+  z-index:5;
+}
