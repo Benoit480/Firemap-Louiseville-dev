@@ -255,3 +255,21 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
 
 /* V20.1.0 — Mode prévention */
 .prevention-help{margin-bottom:14px}.prevention-help p{margin:.45rem 0 0;color:#94a3b8}.prevention-list{display:grid;gap:12px}.prevention-building-card{display:block}.prevention-building-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.prevention-building-head h3{margin:0 0 4px}.prevention-building-head p{margin:0;color:#94a3b8}.score-badge{min-width:58px;padding:8px 10px;border-radius:12px;text-align:center;font-weight:950;background:#2b1115;color:#fca5a5;border:1px solid #7f1d1d}.score-badge.partial{background:#2a210b;color:#fde68a;border-color:#854d0e}.score-badge.complete{background:#0b2819;color:#86efac;border-color:#166534}.score-track{height:9px;border-radius:999px;background:#182230;overflow:hidden;margin:12px 0}.score-track span{display:block;height:100%;background:#ef4444;border-radius:999px;transition:width .25s}.score-track span.partial{background:#f59e0b}.score-track span.complete{background:#22c55e}.prevention-meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#94a3b8;font-size:.82rem}.prevention-meta .overdue{color:#fb923c;font-weight:800}.prevention-dialog{width:min(840px,96vw);max-height:92vh}.prevention-score-card{background:#070c13;border:1px solid #263244;border-radius:16px;padding:14px;margin-bottom:14px}.prevention-score-card>div:first-child{display:flex;justify-content:space-between;align-items:end}.prevention-score-card strong{font-size:1.6rem}.prevention-score-card p{margin:4px 0 0;color:#94a3b8}.prevention-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.prevention-check-grid label{display:flex;align-items:center;gap:9px;background:#070c13;border:1px solid #263244;border-radius:12px;padding:11px;color:#e2e8f0;font-weight:700}.prevention-check-grid input{width:20px;height:20px;accent-color:#dc2626}.risk-checks label:has(input:checked){border-color:#f97316;background:#24140b}.visit-history{display:grid;gap:8px}.visit-item{background:#070c13;border:1px solid #263244;border-radius:12px;padding:11px}.visit-item strong,.visit-item span{display:block}.visit-item span{color:#94a3b8;font-size:.82rem}.visit-item p{margin:6px 0 0}.prevention-summary{border-color:#166534!important}.prevention-summary .score-track{margin:8px 0 12px}@media(max-width:640px){.prevention-check-grid{grid-template-columns:1fr}.prevention-meta{flex-direction:column;gap:4px}.prevention-dialog{width:98vw}}
+
+
+/* V20.1.1 — Photos par catégorie en prévention */
+.prevention-photo-item{background:#070c13;border:1px solid #263244;border-radius:14px;padding:0;overflow:hidden}
+.prevention-photo-item>label{border:0!important;border-radius:0!important;background:transparent!important}
+.category-photo-controls{padding:0 11px 11px;display:flex;gap:8px;flex-wrap:wrap}
+.photo-action{flex:1;min-width:145px;padding:9px 10px;border-radius:10px;border:1px solid #334155;background:#111b29;color:#f8fafc;font-weight:800;font-size:.82rem}
+.photo-action.camera{border-color:#b91c1c;background:#2a0f14}.photo-action.import{border-color:#1d4ed8;background:#0c1b36}
+.category-photo-input{display:none!important}
+.category-photo-gallery{width:100%;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px}
+.category-photo-gallery>small{color:#94a3b8}
+.category-photo-thumb{position:relative;margin:0;width:74px;height:74px;border:1px solid #334155;border-radius:10px;overflow:hidden;background:#02050a}
+.category-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.category-photo-thumb button{position:absolute;right:3px;top:3px;width:25px;height:25px;border-radius:50%;border:1px solid #fecaca;background:#b91c1c;color:#fff;font-size:18px;line-height:20px;padding:0}
+.prevention-photo-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:12px}
+.prevention-photo-summary img{width:100%;height:82px;object-fit:cover;border-radius:10px;border:1px solid #334155}
+.prevention-check-grid .prevention-photo-item:has(input:checked){border-color:#dc2626}.risk-checks .prevention-photo-item:has(input:checked){border-color:#f97316;background:#24140b}
+@media(max-width:640px){.photo-action{min-width:calc(50% - 4px);font-size:.76rem;padding:9px 5px}}
