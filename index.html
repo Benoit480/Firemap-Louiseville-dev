@@ -26,7 +26,7 @@
     <button data-view="assistant" class="drawer-link">🚨 Assistant d’intervention</button>
     <button data-view="hydrants" class="drawer-link">🚰 Bornes-fontaines</button>
     <button id="drawerAdd" class="drawer-link">➕ Ajouter</button>
-    <button data-view="preplans" class="drawer-link">🏢 Préplans / bâtiments</button>
+    <button data-view="preplans" class="drawer-link">🏢 Bâtiments</button>
     <button data-view="prevention" class="drawer-link">🛡️ Mode prévention</button>
     <button data-view="vehicles" class="drawer-link">🚒 Caserne et véhicules</button>
     <button data-view="inspections" class="drawer-link">✅ Inspections</button>
@@ -124,7 +124,7 @@
 
 
     <section id="view-preplans" class="view">
-      <div class="section-title"><div><small>PRÉVENTION ET INTERVENTION</small><h2>Préplans et bâtiments à risque</h2></div><button id="addBuildingTop" class="primary small">＋ Ajouter</button></div>
+      <div class="section-title"><div><small>PRÉVENTION ET OPÉRATIONS</small><h2>Bâtiments</h2></div><button id="addBuildingTop" class="primary small">＋ Ajouter</button></div>
       <div class="filter-row"><input id="buildingSearch" type="search" placeholder="Rechercher nom, adresse, risque…"><select id="riskFilter"><option value="">Tous les risques</option><option value="low">Faible</option><option value="medium">Moyen</option><option value="high">Élevé</option><option value="very_high">Très élevé</option></select></div>
       <div id="buildingList" class="card-list"></div>
     </section>
@@ -167,7 +167,7 @@
     <button data-view="assistant">🚨<span>Intervention</span></button>
     <button data-view="hydrants">🚰<span>Bornes</span></button>
     <button id="bottomAdd" class="add-main">＋<span>Ajouter</span></button>
-    <button data-view="preplans">🏢<span>Préplans</span></button>
+    <button data-view="preplans">🏢<span>Bâtiments</span></button>
     <button id="bottomMore">☰<span>Plus</span></button>
   </nav>
 
@@ -195,12 +195,12 @@
 
   <dialog id="addChoiceDialog" class="choice-dialog">
     <div class="modal-head"><div><small>AJOUTER SUR LA CARTE</small><h2>Que voulez-vous ajouter?</h2></div><button type="button" id="closeChoice">×</button></div>
-    <div class="choice-grid"><button id="chooseHydrant" class="choice-card"><span>🚰</span><strong>Une borne-fontaine</strong><small>Conserve le formulaire actuel</small></button><button id="chooseBuilding" class="choice-card"><span>🏢</span><strong>Un bâtiment à risque</strong><small>Créer un préplan opérationnel</small></button></div>
+    <div class="choice-grid"><button id="chooseHydrant" class="choice-card"><span>🚰</span><strong>Une borne-fontaine</strong><small>Conserve le formulaire actuel</small></button><button id="chooseBuilding" class="choice-card"><span>🏢</span><strong>Un bâtiment à risque</strong><small>Créer une fiche bâtiment</small></button></div>
   </dialog>
 
   <dialog id="buildingDialog" class="building-dialog">
     <form id="buildingForm" method="dialog">
-      <div class="modal-head"><div><small>BÂTIMENT À RISQUE</small><h2 id="buildingModalTitle">Ajouter un préplan</h2></div><button type="button" id="closeBuildingModal">×</button></div>
+      <div class="modal-head"><div><small>BÂTIMENT À RISQUE</small><h2 id="buildingModalTitle">Ajouter un bâtiment</h2></div><button type="button" id="closeBuildingModal">×</button></div>
       <input type="hidden" id="buildingId">
       <div class="form-section"><h3>Informations générales</h3><div class="form-grid">
         <label>Nom du bâtiment<input id="buildingName" required placeholder="Ex. École secondaire"></label>
