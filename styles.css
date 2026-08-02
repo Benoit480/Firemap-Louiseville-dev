@@ -566,3 +566,42 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
     height:120px;
   }
 }
+
+
+/* FireMap V20.2.3 — lecture seule pendant une intervention */
+.intervention-readonly-banner{
+  margin:10px 12px 0;
+  padding:12px 14px;
+  border:2px solid #ef4444;
+  border-radius:14px;
+  background:#2a0b0f;
+  color:#fecaca;
+  font-weight:950;
+  text-align:center;
+  letter-spacing:.02em;
+}
+#preventionForm.intervention-readonly{
+  position:relative;
+}
+#preventionForm.intervention-readonly input:disabled,
+#preventionForm.intervention-readonly select:disabled,
+#preventionForm.intervention-readonly textarea:disabled{
+  opacity:1;
+  color:#e5e7eb!important;
+  -webkit-text-fill-color:#e5e7eb!important;
+  background:#070b12!important;
+  border-color:#334155!important;
+}
+#preventionForm.intervention-readonly input[type="checkbox"]:disabled{
+  opacity:1;
+  filter:none;
+}
+#preventionForm.intervention-readonly label{
+  cursor:default!important;
+}
+#preventionForm.intervention-readonly .category-photo-gallery{
+  display:grid!important;
+}
+#preventionForm.intervention-readonly .category-photo-thumb button{
+  display:none!important;
+}

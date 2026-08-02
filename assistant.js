@@ -124,3 +124,29 @@
     if(shared){I.showView("assistant");$("smsImportCard").open=true;$("dispatchSms").value=shared;setTimeout(()=>importDispatchSms(shared),350);history.replaceState({},"",location.pathname)}
   });
 })();
+
+
+/* FireMap V20.2.3 — événements de verrouillage des fiches */
+(function(){
+  const dispatch=(name,detail={})=>window.dispatchEvent(new CustomEvent(name,{detail}));
+  const originalSetItem=localStorage.setItem.bind(localStorage);
+  const originalRemoveItem=localStorage.removeItem.bind(localStorage);
+
+  localStorage.setItem=function(key,value){
+    originalSetItem(key,value);
+    if(/active[-_ ]?(call|intervention)|appel[-_ ]?actif/i.test(key)){
+      dispatch("firemap:intervention-started",{key,value});
+    }
+  };
+  localStorage.removeItem=function(key){
+    originalRemoveItem(key);
+    if(/active[-_ ]?(call|intervention)|appel[-_ ]?actif/i.test(key)){
+      dispatch("firemap:intervention-ended",{key});
+    }
+  };
+
+  window.fireMapInterventionLock={
+    start(detail={}){dispatch("firemap:intervention-started",detail)},
+    end(detail={}){dispatch("firemap:intervention-ended",detail)}
+  };
+})();

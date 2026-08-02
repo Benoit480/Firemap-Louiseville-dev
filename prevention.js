@@ -76,7 +76,7 @@
     $("preventionVisitHistory").innerHTML=r.visits.length?r.visits.map(v=>`<div class="visit-item"><strong>${esc(v.date||"")}</strong><span>${esc(v.inspector||"Inspecteur non inscrit")}</span><p>${esc(v.observations||"Aucune observation")}</p></div>`).join(""):'<p class="muted">Aucune visite enregistrée.</p>';
     document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.remove("form-section-collapsed"));
     const toggle=$("toggleBuildingSections");if(toggle)toggle.textContent="↕ Réduire les sections";
-    decoratePhotoRows();renderAllPhotoGalleries();renderAllCategoryGalleries();updateLiveScore();$("preventionDialog").showModal();
+    decoratePhotoRows();renderAllPhotoGalleries();renderAllCategoryGalleries();updateLiveScore();$("preventionDialog").showModal();setTimeout(refreshPreventionLock,0);
   }
   function formRecord(){
     const id=$("preventionBuildingId").value,old=recordFor(id),visitDate=$("preventionVisitDate").value||today();
@@ -87,7 +87,7 @@
     return canonical({...old,id,buildingId:id,inspector:entry.inspector,visitDate,nextReview:$("preventionNextReview").value,occupancy:Number($("preventionOccupancy").value||0),accessCode:$("preventionAccessCode").value.trim(),checks,risks,electricalNotes:$("pvElectricalNotes").value.trim(),gasNotes:$("pvGasNotes").value.trim(),fdcNotes:$("pvFdcNotes").value.trim(),accessNotes:$("pvAccessNotes").value.trim(),hazmatNotes:$("pvHazmatNotes").value.trim(),photoUrls:$("pvPhotoUrls").value,photosByCategory:JSON.parse(JSON.stringify(draftPhotos||{})),observations:entry.observations,visits:same?old.visits:[entry,...old.visits].slice(0,20)});
   }
   function updateLiveScore(){const id=$("preventionBuildingId").value;if(!id)return;const b=buildings().find(x=>String(x.id)===String(id));const r=formRecord();const s=score(r,b);$("preventionScoreValue").textContent=s+" %";$("preventionScoreBar").style.width=s+"%";$("preventionScoreBar").className=scoreState(s);$("preventionScoreLabel").textContent=scoreLabel(s)}
-  async function save(e){e.preventDefault();const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
+  async function save(e){e.preventDefault();if(hasActiveIntervention()){I.toast("Mode intervention : fiche en lecture seule.");return;}const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
   async function flush(){const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)return;for(const [id,r] of Object.entries(pending()))try{await c.savePrevention(r);clearPending(id)}catch(e){console.error(e)}}
   function connect(){const c=window.fireMapCloud;if(!c?.configured||!c.subscribePrevention){render();return}if(cloudUnsub)cloudUnsub();cloudUnsub=c.subscribePrevention(items=>{const p=pending();records=new Map(items.map(x=>{const r=canonical(x);return[r.id,r]}));Object.values(p).forEach(x=>{const r=canonical(x);records.set(r.id,r)});persist();render();flush()},e=>{console.error(e);I.toast("Prévention en mode local.")});flush()}
   function preplanHtml(id){
@@ -326,7 +326,67 @@
   $("categoryCameraInput")?.addEventListener("change",e=>addCategoryFiles([...e.target.files]));
   $("categoryImportInput")?.addEventListener("change",e=>addCategoryFiles([...e.target.files]));
 
-  window.fireMapPrevention={getRecordForBuilding:id=>records.get(String(id))||null,getScore:id=>{const b=buildings().find(x=>String(x.id)===String(id));return score(recordFor(id),b)},open,openOperational,preplanHtml};
+
+  function hasActiveIntervention(){
+    try{
+      const active =
+        window.fireMapAssistant?.getActiveCall?.() ||
+        window.fireMapAssistant?.activeCall ||
+        window.fireMapInternal?.state?.activeCall ||
+        window.fireMapInternal?.state?.activeIntervention ||
+        JSON.parse(localStorage.getItem("firemap-active-call") || "null") ||
+        JSON.parse(localStorage.getItem("firemap-active-intervention") || "null");
+      return !!active;
+    }catch(_){return false}
+  }
+
+  function setPreventionReadOnly(locked){
+    const form=$("preventionForm");
+    if(!form)return;
+    form.classList.toggle("intervention-readonly",locked);
+    $("interventionReadOnlyBanner")?.classList.toggle("hidden",!locked);
+
+    form.querySelectorAll("input, select, textarea").forEach(el=>{
+      if(el.type==="hidden")return;
+      if(locked){
+        el.dataset.wasDisabled=el.disabled?"1":"0";
+        el.disabled=true;
+      }else if(el.dataset.wasDisabled==="0"){
+        el.disabled=false;
+        delete el.dataset.wasDisabled;
+      }
+    });
+
+    form.querySelectorAll(
+      ".category-photo-btn,[data-photo-delete],#openLegacyPreplan,#toggleBuildingSections"
+    ).forEach(btn=>{
+      if(locked){
+        btn.dataset.wasHidden=btn.classList.contains("hidden")?"1":"0";
+        btn.classList.add("hidden");
+      }else if(btn.dataset.wasHidden==="0"){
+        btn.classList.remove("hidden");
+        delete btn.dataset.wasHidden;
+      }
+    });
+
+    const save=$("savePreventionButton") || form.querySelector('button[type="submit"]');
+    if(save){
+      save.disabled=locked;
+      save.classList.toggle("hidden",locked);
+    }
+  }
+
+  function refreshPreventionLock(){
+    const locked=hasActiveIntervention();
+    setPreventionReadOnly(locked);
+    return locked;
+  }
+
+  window.addEventListener("firemap:intervention-started",refreshPreventionLock);
+  window.addEventListener("firemap:intervention-ended",refreshPreventionLock);
+  window.addEventListener("storage",refreshPreventionLock);
+
+  window.fireMapPrevention={refreshReadOnly:refreshPreventionLock,getRecordForBuilding:id=>records.get(String(id))||null,getScore:id=>{const b=buildings().find(x=>String(x.id)===String(id));return score(recordFor(id),b)},open,openOperational,preplanHtml};
   $("preventionBackMap").onclick=()=>I.showView("map");$("preventionSearch").oninput=render;$("preventionFilter").onchange=render;$("closePreventionDialog").onclick=$("cancelPreventionDialog").onclick=()=>$("preventionDialog").close();
   $("openLegacyPreplan").onclick=()=>{const id=$("preventionBuildingId").value;if(!id)return;$("preventionDialog").close();window.fireMapPreplans?.openLegacyPreplanById?.(id)};
   $("openOperationalView").onclick=()=>{const id=$("preventionBuildingId").value;if(id)openOperational(id)};
