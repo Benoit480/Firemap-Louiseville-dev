@@ -150,6 +150,7 @@
     try{if(photo.path&&window.fireMapCloud?.deletePreventionPhoto)await window.fireMapCloud.deletePreventionPhoto(photo.path)}catch(err){console.warn(err)}
   }
   let operationalBuildingId="";
+  let forceReadOnlyFromOperationalView=false;
   function operationalHtml(id){
     const b=buildings().find(x=>String(x.id)===String(id));
     if(!b)return '<section class="preplan-section preplan-alert"><h3>Bâtiment introuvable</h3></section>';
@@ -180,6 +181,7 @@
   }
   function openOperational(id){
     const b=buildings().find(x=>String(x.id)===String(id));if(!b)return I.toast("Bâtiment introuvable.");
+    forceReadOnlyFromOperationalView=true;
     operationalBuildingId=String(id);
     $("operationalBuildingTitle").textContent=b.name||"Fiche opérationnelle";
     $("operationalBuildingContent").innerHTML=operationalHtml(id);
@@ -328,6 +330,7 @@
 
 
   function hasActiveIntervention(){
+    if(forceReadOnlyFromOperationalView)return true;
     try{
       const active =
         window.fireMapAssistant?.getActiveCall?.() ||
@@ -386,14 +389,37 @@
   window.addEventListener("firemap:intervention-ended",refreshPreventionLock);
   window.addEventListener("storage",refreshPreventionLock);
 
-  window.fireMapPrevention={refreshReadOnly:refreshPreventionLock,getRecordForBuilding:id=>records.get(String(id))||null,getScore:id=>{const b=buildings().find(x=>String(x.id)===String(id));return score(recordFor(id),b)},open,openOperational,preplanHtml};
-  $("preventionBackMap").onclick=()=>I.showView("map");$("preventionSearch").oninput=render;$("preventionFilter").onchange=render;$("closePreventionDialog").onclick=$("cancelPreventionDialog").onclick=()=>$("preventionDialog").close();
+  function openEditable(id){
+    forceReadOnlyFromOperationalView=false;
+    open(id);
+  }
+  window.fireMapPrevention={
+    refreshReadOnly:refreshPreventionLock,
+    getRecordForBuilding:id=>records.get(String(id))||null,
+    getScore:id=>{const b=buildings().find(x=>String(x.id)===String(id));return score(recordFor(id),b)},
+    open:openEditable,
+    openReadOnly:id=>{forceReadOnlyFromOperationalView=true;open(id)},
+    openOperational,
+    preplanHtml
+  };
+  $("preventionBackMap").onclick=()=>I.showView("map");$("preventionSearch").oninput=render;$("preventionFilter").onchange=render;$("closePreventionDialog").onclick=$("cancelPreventionDialog").onclick=()=>{
+    $("preventionDialog").close();
+    forceReadOnlyFromOperationalView=false;
+  };
   $("openLegacyPreplan").onclick=()=>{const id=$("preventionBuildingId").value;if(!id)return;$("preventionDialog").close();window.fireMapPreplans?.openLegacyPreplanById?.(id)};
   $("openOperationalView").onclick=()=>{const id=$("preventionBuildingId").value;if(id)openOperational(id)};
-  $("closeOperationalBuilding").onclick=()=>$("operationalBuildingDialog").close();
+  $("closeOperationalBuilding").onclick=()=>{
+    $("operationalBuildingDialog").close();
+    forceReadOnlyFromOperationalView=false;
+  };
   $("operationalShowMap").onclick=()=>{if(!operationalBuildingId)return;$("operationalBuildingDialog").close();window.fireMapPreplans?.showBuildingOnMap?.(operationalBuildingId)};
   $("operationalNavigate").onclick=()=>{if(!operationalBuildingId)return;const b=buildings().find(x=>String(x.id)===String(operationalBuildingId));if(b)I.openNavigation?.(b)};
-  $("operationalEditBuilding").onclick=()=>{if(!operationalBuildingId)return;$("operationalBuildingDialog").close();open(operationalBuildingId)};
+  $("operationalEditBuilding").onclick=()=>{
+    if(!operationalBuildingId)return;
+    forceReadOnlyFromOperationalView=true;
+    $("operationalBuildingDialog").close();
+    open(operationalBuildingId);
+  };
   let sectionsCollapsed=false;
   $("toggleBuildingSections").onclick=()=>{
     sectionsCollapsed=!sectionsCollapsed;

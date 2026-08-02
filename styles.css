@@ -605,3 +605,12 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
 #preventionForm.intervention-readonly .category-photo-thumb button{
   display:none!important;
 }
+
+
+/* FireMap V20.2.4 — verrouillage forcé depuis Vue intervention */
+#preventionForm.intervention-readonly .category-photo-toolbar .category-photo-btn{
+  display:none!important;
+}
+#preventionForm.intervention-readonly .modal-actions button[type="submit"]{
+  display:none!important;
+}
