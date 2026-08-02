@@ -705,3 +705,13 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
   object-fit:cover!important;
   background:#111827;
 }
+
+
+/* FireMap V20.2.11 — photos gratuites dans Firestore */
+.category-photo-gallery::before{
+  content:"Photos enregistrées dans la fiche";
+  grid-column:1/-1;
+  color:#94a3b8;
+  font-size:12px;
+  font-weight:700;
+}

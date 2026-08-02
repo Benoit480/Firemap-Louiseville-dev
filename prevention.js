@@ -123,7 +123,12 @@
     return canonical({...old,id,buildingId:id,inspector:entry.inspector,visitDate,nextReview:$("preventionNextReview").value,occupancy:Number($("preventionOccupancy").value||0),accessCode:$("preventionAccessCode").value.trim(),checks,risks,electricalNotes:$("pvElectricalNotes").value.trim(),gasNotes:$("pvGasNotes").value.trim(),fdcNotes:$("pvFdcNotes").value.trim(),accessNotes:$("pvAccessNotes").value.trim(),hazmatNotes:$("pvHazmatNotes").value.trim(),photoUrls:$("pvPhotoUrls").value,photosByCategory:mergedPhotos,observations:entry.observations,visits:same?old.visits:[entry,...old.visits].slice(0,20)});
   }
   function updateLiveScore(){const id=$("preventionBuildingId").value;if(!id)return;const b=buildings().find(x=>String(x.id)===String(id));const r=formRecord();const s=score(r,b);$("preventionScoreValue").textContent=s+" %";$("preventionScoreBar").style.width=s+"%";$("preventionScoreBar").className=scoreState(s);$("preventionScoreLabel").textContent=scoreLabel(s)}
-  async function save(e){e.preventDefault();if(!preventionEditMode){I.toast("Appuyez sur Modifier pour changer la fiche.");return;}if(forceReadOnlyFromOperationalView){I.toast("Vue intervention : fiche en lecture seule.");return;}const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
+  async function save(e){e.preventDefault();
+    const estimatedPhotoBytes=Object.values(draftPhotos||{}).flat().reduce((sum,p)=>sum+Number(p?.size||dataUrlBytes(p?.url||"")),0);
+    if(estimatedPhotoBytes>850000){
+      I.toast("Trop de photos dans cette fiche. Supprimez-en une avant d’enregistrer.");
+      return;
+    }if(!preventionEditMode){I.toast("Appuyez sur Modifier pour changer la fiche.");return;}if(forceReadOnlyFromOperationalView){I.toast("Vue intervention : fiche en lecture seule.");return;}const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
   async function flush(){const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)return;for(const [id,r] of Object.entries(pending()))try{await c.savePrevention(r);clearPending(id)}catch(e){console.error(e)}}
   function connect(){
     const c=window.fireMapCloud;
@@ -210,34 +215,89 @@
       return blob?new File([blob],(file.name||"photo").replace(/\.[^.]+$/,"")+".jpg",{type:"image/jpeg"}):file;
     }catch(_){return file}
   }
-  async function uploadCategoryPhotos(category,files){
-    const buildingId=$("preventionBuildingId").value;if(!buildingId||!files.length)return;
-    const cloud=window.fireMapCloud;if(!cloud?.configured||!cloud.uploadPreventionPhoto){I.toast("Activez Firebase Storage pour enregistrer les photos.");return}
-    if(!draftPhotos[category])draftPhotos[category]=[];
-    I.toast("Téléversement des photos…");
-    for(const original of files){
-      try{
-        if(original.size>15*1024*1024)throw new Error("Photo trop volumineuse (maximum 15 Mo).");
-        const file=await compressImage(original);
-        const uploaded=await cloud.uploadPreventionPhoto(buildingId,category,file);
-        const normalized={...uploaded,url:photoUrl(uploaded)};
-        draftPhotos[category].push(normalized);
-        const current=mutableCurrentRecord?.();if(current){current.photosByCategory=JSON.parse(JSON.stringify(draftPhotos));records.set(String(current.id),current);persist();}
-        renderPhotoGallery(category);renderCategoryGallery?.(category);updateLiveScore();
-      }catch(err){console.error(err);I.toast(err.message||"Impossible d’enregistrer la photo.")}
+  
+  function dataUrlBytes(dataUrl=""){
+    const base64=String(dataUrl).split(",")[1]||"";
+    return Math.ceil(base64.length*0.75);
+  }
+
+  async function compressImageForFirestore(file){
+    const bitmap=await createImageBitmap(file);
+    const maxDimension=1100;
+    const scale=Math.min(1,maxDimension/Math.max(bitmap.width,bitmap.height));
+    const width=Math.max(1,Math.round(bitmap.width*scale));
+    const height=Math.max(1,Math.round(bitmap.height*scale));
+    const canvas=document.createElement("canvas");
+    canvas.width=width;
+    canvas.height=height;
+    const ctx=canvas.getContext("2d",{alpha:false});
+    ctx.drawImage(bitmap,0,0,width,height);
+    bitmap.close?.();
+
+    let quality=.68;
+    let dataUrl=canvas.toDataURL("image/jpeg",quality);
+    let bytes=dataUrlBytes(dataUrl);
+
+    // Cible d'environ 180 Ko par photo.
+    while(bytes>180000&&quality>.32){
+      quality-=.08;
+      dataUrl=canvas.toDataURL("image/jpeg",quality);
+      bytes=dataUrlBytes(dataUrl);
     }
+
+    if(bytes>230000){
+      throw new Error("Photo trop volumineuse même après compression.");
+    }
+
+    return {dataUrl,bytes,width,height};
+  }
+
+async function uploadCategoryPhotos(category,files){
+    if(!files?.length)return;
+    const buildingId=$("preventionBuildingId").value;
+    if(!buildingId)return I.toast("Enregistrez d’abord le bâtiment.");
+
+    draftPhotos[category]=Array.isArray(draftPhotos[category])?draftPhotos[category]:[];
+
+    for(const original of files){
+      if(!original.type?.startsWith("image/"))continue;
+
+      // Compression forte pour respecter la limite d'un document Firestore.
+      const compressed=await compressImageForFirestore(original);
+      const photo={
+        id:`photo-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+        url:compressed.dataUrl,
+        name:original.name||`${category}-${Date.now()}.jpg`,
+        type:"image/jpeg",
+        size:compressed.bytes,
+        width:compressed.width,
+        height:compressed.height,
+        createdAt:new Date().toISOString(),
+        storage:"firestore"
+      };
+
+      draftPhotos[category].push(photo);
+    }
+
+    renderCategoryGallery(category);
+    renderPhotoGallery(category);
+    updateLiveScore();
+
     const current=formRecord();
     records.set(current.id,current);
     persist();
     queue(current);
+
     try{
       if(window.fireMapCloud?.configured&&window.fireMapCloud.savePrevention){
         await window.fireMapCloud.savePrevention(current);
+        clearPending(current.id);
       }
+      I.toast("Photo enregistrée gratuitement dans Firestore.");
     }catch(err){
       console.warn("Photo enregistrée localement, synchronisation en attente.",err);
+      I.toast("Photo enregistrée localement; synchronisation en attente.");
     }
-    I.toast("Photo ajoutée et enregistrée sous la catégorie.");
   }
   async function deleteCategoryPhoto(category,index){
     const photos=draftPhotos[category]||[],photo=photos[index];if(!photo)return;
@@ -353,7 +413,7 @@
       const url=photoUrl(photo);
       if(!url)return "";
       return `<figure class="category-photo-thumb">
-        <a href="${esc(url)}" target="_blank" rel="noopener">
+        <a href="${esc(url)}" target="_blank" rel="noopener" data-photo-open="1">
           <img src="${esc(url)}" alt="${esc(categoryLabel(category))}" loading="eager">
         </a>
         <button type="button" data-photo-delete="${category}" data-photo-index="${index}" aria-label="Supprimer">×</button>
