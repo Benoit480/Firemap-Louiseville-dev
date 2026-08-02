@@ -40,8 +40,8 @@
   function showOnMap(b){$("preplanDialog").close();I.showView("map");I.map.setView([b.lat,b.lng],18);markers.get(b.id)?.openPopup()}
   document.addEventListener("click",e=>{
     const addTrigger=e.target.closest("#bottomAdd,#mapAddBtn,#drawerAdd");if(addTrigger){e.preventDefault();e.stopImmediatePropagation();openChoice();return}
-    const op=e.target.closest("[data-open-preplan]");if(op)openPreplan(buildings.find(b=>b.id===op.dataset.openPreplan));
-    const sh=e.target.closest("[data-show-building]");if(sh)openPreplan(buildings.find(b=>b.id===sh.dataset.showBuilding));
+    const op=e.target.closest("[data-open-preplan]");if(op){const id=op.dataset.openPreplan;window.fireMapPrevention?.open?.(id)||openPreplan(buildings.find(b=>b.id===id))}
+    const sh=e.target.closest("[data-show-building]");if(sh){const id=sh.dataset.showBuilding;window.fireMapPrevention?.open?.(id)||openPreplan(buildings.find(b=>b.id===id))}
     const ed=e.target.closest("[data-edit-building]");if(ed){$("preplanDialog").close();openForm(buildings.find(b=>b.id===ed.dataset.editBuilding))}
     const nv=e.target.closest("[data-nav-building]");if(nv){const b=buildings.find(x=>x.id===nv.dataset.navBuilding);if(b)location.href=I.navUrl(b.lat,b.lng)}
     const mp=e.target.closest("[data-map-building]");if(mp){const b=buildings.find(x=>x.id===mp.dataset.mapBuilding);if(b)showOnMap(b)}
@@ -147,8 +147,9 @@
       }catch(err){console.warn("Mise à jour bâtiment en attente",err)}
       return true;
     },
-    openPreplanById:id=>openPreplan(buildings.find(b=>b.id===id)),
-    showBuildingOnMap:id=>{const b=buildings.find(x=>x.id===id);if(b)showOnMap(b)},
+    openPreplanById:id=>{const b=buildings.find(x=>String(x.id)===String(id));if(b)openPreplan(b)},
+    openLegacyPreplanById:id=>{const b=buildings.find(x=>String(x.id)===String(id));if(b)openPreplan(b)},
+    showBuildingOnMap:id=>{const b=buildings.find(x=>String(x.id)===String(id));if(b)showOnMap(b)},
     updateBuildingFromPrevention
   };
   window.dispatchEvent(new Event("firemap-preplans-ready"));

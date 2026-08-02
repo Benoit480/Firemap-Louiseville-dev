@@ -235,7 +235,7 @@
 
   <dialog id="preventionDialog" class="prevention-dialog">
     <form id="preventionForm" method="dialog">
-      <div class="modal-head"><div><small>MODE PRÉVENTION</small><h2 id="preventionDialogTitle">Visite du bâtiment</h2></div><button type="button" id="closePreventionDialog">×</button></div>
+      <div class="modal-head"><div><small>FICHE BÂTIMENT — PRÉVENTION ET OPÉRATIONS</small><h2 id="preventionDialogTitle">Fiche du bâtiment</h2></div><button type="button" id="closePreventionDialog">×</button></div>
       <input type="hidden" id="preventionBuildingId">
       <div class="prevention-score-card"><div><small>PRÉPARATION OPÉRATIONNELLE</small><strong id="preventionScoreValue">0 %</strong></div><div class="score-track"><span id="preventionScoreBar"></span></div><p id="preventionScoreLabel">Informations à compléter</p></div>
       <div class="form-section"><h3>Visite et responsable</h3><div class="form-grid">
@@ -277,7 +277,7 @@
         <label class="wide">Observations de la visite<textarea id="pvObservations" rows="4" placeholder="Anomalies, corrections demandées et notes de suivi"></textarea></label>
       </div></div>
       <section class="form-section"><h3>Historique des visites</h3><div id="preventionVisitHistory" class="visit-history"></div></section>
-      <div class="modal-actions"><span></span><button type="button" id="cancelPreventionDialog" class="secondary">Annuler</button><button type="submit" class="primary">Enregistrer la visite</button></div>
+      <div class="modal-actions building-main-actions"><button type="button" id="openLegacyPreplan" class="secondary">📁 Anciennes données</button><span></span><button type="button" id="cancelPreventionDialog" class="secondary">Annuler</button><button type="submit" class="primary">Enregistrer la fiche</button></div>
     </form>
   </dialog>
 

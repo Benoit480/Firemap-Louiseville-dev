@@ -299,3 +299,37 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
   border-color:#3b82f6!important;
   color:#dbeafe!important;
 }
+
+
+/* FireMap V20.1.5 — fiche Prévention principale */
+#preventionDialog .modal-head small{
+  color:#ff4d55;
+}
+#preventionDialog .modal-head h2{
+  color:#fff;
+}
+.building-main-actions{
+  position:sticky;
+  bottom:0;
+  z-index:10;
+  background:rgba(7,10,16,.98);
+  border-top:1px solid #26344d;
+  padding:12px;
+}
+#openLegacyPreplan{
+  border-color:#6b7280!important;
+  color:#d1d5db!important;
+  white-space:nowrap;
+}
+@media(max-width:650px){
+  .building-main-actions{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .building-main-actions span{
+    display:none;
+  }
+  #openLegacyPreplan{
+    grid-column:1/-1;
+  }
+}
