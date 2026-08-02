@@ -50,16 +50,23 @@
   async function flush(){for(const u of Object.values(pending()))try{await window.fireMapCloud?.saveVehicleUsage?.(u);clearPending(u.id)}catch(_){}}
   function connect(){const c=window.fireMapCloud;if(!c?.subscribeVehicleUsages){render();return}cloudUnsub?.();cloudUnsub=c.subscribeVehicleUsages(items=>{const p=pending();usages=items.map(canonical);Object.values(p).forEach(x=>{const u=canonical(x),i=usages.findIndex(y=>y.id===u.id);if(i>=0)usages[i]=u;else usages.push(u)});persist();render();window.dispatchEvent(new CustomEvent("firemap:vehicle-usages-ready"));flush()},console.error);flush()}
   document.addEventListener("click",e=>{const s=e.target.closest("[data-usage-status]");if(s)setStatus(s.dataset.usageStatus);const o=e.target.closest("[data-outlet-toggle]");if(o){const k=o.dataset.outletToggle;setActive(k,!active(k))}const ed=e.target.closest("[data-usage-edit]");if(ed)openForm(usages.find(x=>x.id===ed.dataset.usageEdit))});
-  $("newVehicleUsage").onclick=()=>openForm();$("closeVehicleUsageDialog").onclick=$("cancelVehicleUsageDialog").onclick=()=>$("vehicleUsageDialog").close();$("deleteVehicleUsage").onclick=remove;$("vehicleUsageForm").onsubmit=save;
+  if($("newVehicleUsage")) $("newVehicleUsage").onclick=()=>openForm();
+  if($("closeVehicleUsageDialog")) $("closeVehicleUsageDialog").onclick=()=>$("vehicleUsageDialog").close();
+  if($("cancelVehicleUsageDialog")) $("cancelVehicleUsageDialog").onclick=()=>$("vehicleUsageDialog").close();
+  if($("deleteVehicleUsage")) $("deleteVehicleUsage").onclick=remove;
+  if($("vehicleUsageForm")) $("vehicleUsageForm").onsubmit=save;
   function latestForVehicle(vehicleId){
     return [...usages]
       .filter(u=>String(u.vehicleId)===String(vehicleId))
       .sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")))[0]||null;
   }
   function openForVehicle(vehicleId){
+    if(!$("vehicleUsageDialog")){
+      console.error("Fenêtre de fiche véhicule introuvable.");
+      return I.toast("La fiche du véhicule ne peut pas s’ouvrir.");
+    }
     const existing=latestForVehicle(vehicleId);
     if(existing)return openForm(existing);
-    const event=activeCommandEvent();
     const vehicle=vehicles().find(v=>String(v.id)===String(vehicleId));
     const fresh=ensureEventLink(canonical({
       vehicleId:String(vehicle?.id||vehicleId),
