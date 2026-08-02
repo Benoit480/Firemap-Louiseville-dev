@@ -781,3 +781,16 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
 
 /* FireMap V20.3.1 — panneau de pompe 6 sorties */
 .sector-choice-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.sector-choice-grid button{min-height:46px;border:1px solid #334155;border-radius:11px;background:#070b12;color:#fff;font-weight:900}.sector-choice-grid button.active{border-color:#2563eb;background:#071a33;color:#bfdbfe}.pump-panel-help{color:#94a3b8}.pump-panel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.pump-outlet-card{border:1px solid #334155;border-radius:15px;padding:11px;background:#070b12}.pump-outlet-card.active{border-color:#22c55e;background:#062015;box-shadow:0 0 0 2px rgba(34,197,94,.15)}.pump-outlet-toggle{width:100%;display:grid;gap:3px;text-align:left;padding:12px;border:1px solid #475569;border-radius:12px;background:#111827;color:#fff;margin-bottom:10px}.pump-outlet-toggle span{font-size:12px;text-transform:uppercase;color:#94a3b8;font-weight:900}.pump-outlet-toggle strong{font-size:17px}.pump-outlet-toggle.active{border-color:#22c55e;background:#0b3b23}.pump-outlet-toggle.active span,.pump-outlet-toggle.active small{color:#bbf7d0}.pump-outlet-card label{display:block;margin-top:8px}@media(max-width:720px){.sector-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sector-choice-grid button:last-child{grid-column:1/-1}.pump-panel-grid{grid-template-columns:1fr}}
+
+
+/* FireMap V20.3.2 — secteur choisi par sortie */
+.outlet-sector-select{
+  width:100%;
+  min-height:44px;
+  padding:9px 11px;
+  border:1px solid #334155;
+  border-radius:10px;
+  background:#0b1220;
+  color:#fff;
+  font-weight:800;
+}

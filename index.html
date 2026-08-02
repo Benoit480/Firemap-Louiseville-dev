@@ -379,13 +379,7 @@
         </div>
       </div>
 
-      <div class="form-section">
-        <h3>📍 Secteur d'opération</h3>
-        <div class="sector-choice-grid" id="vehicleUsageSectorGrid">
-          <button type="button" data-usage-sector="1">Secteur 1</button><button type="button" data-usage-sector="2">Secteur 2</button><button type="button" data-usage-sector="3">Secteur 3</button><button type="button" data-usage-sector="4">Secteur 4</button><button type="button" data-usage-sector="5">Secteur 5</button>
-        </div>
-        <input type="hidden" id="vehicleUsageSector" value="">
-      </div>
+      
 
       <div class="form-section">
         <h3>💧 Panneau de pompe</h3>
@@ -394,37 +388,37 @@
           <section class="pump-outlet-card" data-outlet-card="1">
             <button type="button" class="pump-outlet-toggle" data-outlet-toggle="1"><span>Sortie 1</span><strong>Préconnect 1¾ po</strong><small>Non utilisée</small></button>
             <input type="hidden" id="outlet1Active" value="false"><input type="hidden" id="outlet1Type" value="1¾ po">
-            <label>Pression (PSI)<input id="outlet1Pressure" type="number" min="0" step="1" inputmode="decimal"></label>
+            <label>Pression (PSI)<input id="outlet1Pressure" type="number" min="0" step="1" inputmode="decimal"></label><label>Secteur d’opération<select id="outlet1Sector" class="outlet-sector-select"><option value="">Non précisé</option><option value="1">Secteur 1</option><option value="2">Secteur 2</option><option value="3">Secteur 3</option><option value="4">Secteur 4</option><option value="5">Secteur 5</option></select></label>
             <label>Emplacement / Affectation<input id="outlet1Location" type="text" placeholder="Ex. Côté Alpha, attaque intérieure"></label>
           </section>
           <section class="pump-outlet-card" data-outlet-card="2">
             <button type="button" class="pump-outlet-toggle" data-outlet-toggle="2"><span>Sortie 2</span><strong>Préconnect 1¾ po</strong><small>Non utilisée</small></button>
             <input type="hidden" id="outlet2Active" value="false"><input type="hidden" id="outlet2Type" value="1¾ po">
-            <label>Pression (PSI)<input id="outlet2Pressure" type="number" min="0" step="1" inputmode="decimal"></label>
+            <label>Pression (PSI)<input id="outlet2Pressure" type="number" min="0" step="1" inputmode="decimal"></label><label>Secteur d’opération<select id="outlet2Sector" class="outlet-sector-select"><option value="">Non précisé</option><option value="1">Secteur 1</option><option value="2">Secteur 2</option><option value="3">Secteur 3</option><option value="4">Secteur 4</option><option value="5">Secteur 5</option></select></label>
             <label>Emplacement / Affectation<input id="outlet2Location" type="text" placeholder="Ex. Côté Alpha, attaque intérieure"></label>
           </section>
           <section class="pump-outlet-card" data-outlet-card="3">
             <button type="button" class="pump-outlet-toggle" data-outlet-toggle="3"><span>Sortie 3</span><strong>Sortie de pompe</strong><small>Non utilisée</small></button>
             <input type="hidden" id="outlet3Active" value="false"><label>Type de sortie<select id="outlet3Type"><option value="1¾ po">1¾ po</option><option value="2½ po">2½ po</option></select></label>
-            <label>Pression (PSI)<input id="outlet3Pressure" type="number" min="0" step="1" inputmode="decimal"></label>
+            <label>Pression (PSI)<input id="outlet3Pressure" type="number" min="0" step="1" inputmode="decimal"></label><label>Secteur d’opération<select id="outlet3Sector" class="outlet-sector-select"><option value="">Non précisé</option><option value="1">Secteur 1</option><option value="2">Secteur 2</option><option value="3">Secteur 3</option><option value="4">Secteur 4</option><option value="5">Secteur 5</option></select></label>
             <label>Emplacement / Affectation<input id="outlet3Location" type="text" placeholder="Ex. Côté Alpha, attaque intérieure"></label>
           </section>
           <section class="pump-outlet-card" data-outlet-card="4">
             <button type="button" class="pump-outlet-toggle" data-outlet-toggle="4"><span>Sortie 4</span><strong>Sortie de pompe</strong><small>Non utilisée</small></button>
             <input type="hidden" id="outlet4Active" value="false"><label>Type de sortie<select id="outlet4Type"><option value="1¾ po">1¾ po</option><option value="2½ po">2½ po</option></select></label>
-            <label>Pression (PSI)<input id="outlet4Pressure" type="number" min="0" step="1" inputmode="decimal"></label>
+            <label>Pression (PSI)<input id="outlet4Pressure" type="number" min="0" step="1" inputmode="decimal"></label><label>Secteur d’opération<select id="outlet4Sector" class="outlet-sector-select"><option value="">Non précisé</option><option value="1">Secteur 1</option><option value="2">Secteur 2</option><option value="3">Secteur 3</option><option value="4">Secteur 4</option><option value="5">Secteur 5</option></select></label>
             <label>Emplacement / Affectation<input id="outlet4Location" type="text" placeholder="Ex. Côté Alpha, attaque intérieure"></label>
           </section>
           <section class="pump-outlet-card" data-outlet-card="5">
             <button type="button" class="pump-outlet-toggle" data-outlet-toggle="5"><span>Sortie 5</span><strong>Sortie de pompe</strong><small>Non utilisée</small></button>
             <input type="hidden" id="outlet5Active" value="false"><label>Type de sortie<select id="outlet5Type"><option value="1¾ po">1¾ po</option><option value="2½ po">2½ po</option></select></label>
-            <label>Pression (PSI)<input id="outlet5Pressure" type="number" min="0" step="1" inputmode="decimal"></label>
+            <label>Pression (PSI)<input id="outlet5Pressure" type="number" min="0" step="1" inputmode="decimal"></label><label>Secteur d’opération<select id="outlet5Sector" class="outlet-sector-select"><option value="">Non précisé</option><option value="1">Secteur 1</option><option value="2">Secteur 2</option><option value="3">Secteur 3</option><option value="4">Secteur 4</option><option value="5">Secteur 5</option></select></label>
             <label>Emplacement / Affectation<input id="outlet5Location" type="text" placeholder="Ex. Côté Alpha, attaque intérieure"></label>
           </section>
           <section class="pump-outlet-card" data-outlet-card="6">
             <button type="button" class="pump-outlet-toggle" data-outlet-toggle="6"><span>Sortie 6</span><strong>Sortie de pompe</strong><small>Non utilisée</small></button>
             <input type="hidden" id="outlet6Active" value="false"><label>Type de sortie<select id="outlet6Type"><option value="1¾ po">1¾ po</option><option value="2½ po">2½ po</option></select></label>
-            <label>Pression (PSI)<input id="outlet6Pressure" type="number" min="0" step="1" inputmode="decimal"></label>
+            <label>Pression (PSI)<input id="outlet6Pressure" type="number" min="0" step="1" inputmode="decimal"></label><label>Secteur d’opération<select id="outlet6Sector" class="outlet-sector-select"><option value="">Non précisé</option><option value="1">Secteur 1</option><option value="2">Secteur 2</option><option value="3">Secteur 3</option><option value="4">Secteur 4</option><option value="5">Secteur 5</option></select></label>
             <label>Emplacement / Affectation<input id="outlet6Location" type="text" placeholder="Ex. Côté Alpha, attaque intérieure"></label>
           </section>
         </div>
@@ -436,13 +430,13 @@
           <section class="pump-outlet-card special" data-outlet-card="fourInch">
             <button type="button" class="pump-outlet-toggle" data-outlet-toggle="fourInch"><span>Sortie 4 po</span><strong>Alimentation principale</strong><small>Non utilisée</small></button>
             <input type="hidden" id="fourInchActive" value="false">
-            <label>Pression (PSI)<input id="fourInchPressure" type="number" min="0" step="1" inputmode="decimal"></label>
+            <label>Pression (PSI)<input id="fourInchPressure" type="number" min="0" step="1" inputmode="decimal"></label><label>Secteur d’opération<select id="fourInchSector" class="outlet-sector-select"><option value="">Non précisé</option><option value="1">Secteur 1</option><option value="2">Secteur 2</option><option value="3">Secteur 3</option><option value="4">Secteur 4</option><option value="5">Secteur 5</option></select></label>
             <label>Alimente / Emplacement<input id="fourInchLocation" type="text" placeholder="Ex. Borne, relais, autre autopompe"></label>
           </section>
           <section class="pump-outlet-card special" data-outlet-card="deckGun">
             <button type="button" class="pump-outlet-toggle" data-outlet-toggle="deckGun"><span>Canon</span><strong>Canon de toit</strong><small>Non utilisé</small></button>
             <input type="hidden" id="deckGunActive" value="false">
-            <label>Pression (PSI)<input id="deckGunPressure" type="number" min="0" step="1" inputmode="decimal"></label>
+            <label>Pression (PSI)<input id="deckGunPressure" type="number" min="0" step="1" inputmode="decimal"></label><label>Secteur d’opération<select id="deckGunSector" class="outlet-sector-select"><option value="">Non précisé</option><option value="1">Secteur 1</option><option value="2">Secteur 2</option><option value="3">Secteur 3</option><option value="4">Secteur 4</option><option value="5">Secteur 5</option></select></label>
             <label>Direction / Cible<input id="deckGunLocation" type="text" placeholder="Ex. Toiture — Côté Alpha"></label>
           </section>
         </div>
