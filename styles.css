@@ -286,3 +286,16 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
 .preplan-photo-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
 .preplan-photo-card span{display:block;padding:8px 10px;font-size:.82rem;font-weight:700}
 @media(min-width:700px){.preplan-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+/* FireMap V20.1.4 — liaison Prévention/Bâtiments */
+.building-prevention-meta{
+  display:block;
+  margin-top:5px;
+  color:#9fb0c7;
+  font-size:12px;
+}
+.prevention-open-btn{
+  border-color:#3b82f6!important;
+  color:#dbeafe!important;
+}
