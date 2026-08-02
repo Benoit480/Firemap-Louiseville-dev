@@ -75,7 +75,6 @@
     $("pvElectricalNotes").value=r.electricalNotes;$("pvGasNotes").value=r.gasNotes;$("pvFdcNotes").value=r.fdcNotes;$("pvAccessNotes").value=r.accessNotes;$("pvHazmatNotes").value=r.hazmatNotes;$("pvPhotoUrls").value=r.photoUrls.join("\n");$("pvObservations").value=r.observations;
     $("preventionVisitHistory").innerHTML=r.visits.length?r.visits.map(v=>`<div class="visit-item"><strong>${esc(v.date||"")}</strong><span>${esc(v.inspector||"Inspecteur non inscrit")}</span><p>${esc(v.observations||"Aucune observation")}</p></div>`).join(""):'<p class="muted">Aucune visite enregistrée.</p>';
     document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.remove("form-section-collapsed"));
-    const toggle=$("toggleBuildingSections");if(toggle)toggle.textContent="↕ Réduire les sections";
     decoratePhotoRows();renderAllPhotoGalleries();renderAllCategoryGalleries();updateLiveScore();$("preventionDialog").showModal();setTimeout(refreshPreventionLock,0);
   }
   function formRecord(){
@@ -361,7 +360,7 @@
     });
 
     form.querySelectorAll(
-      ".category-photo-btn,[data-photo-delete],#openLegacyPreplan,#toggleBuildingSections"
+      ".category-photo-btn,[data-photo-delete]"
     ).forEach(btn=>{
       if(locked){
         btn.dataset.wasHidden=btn.classList.contains("hidden")?"1":"0";
@@ -406,7 +405,6 @@
     $("preventionDialog").close();
     forceReadOnlyFromOperationalView=false;
   };
-  $("openLegacyPreplan").onclick=()=>{const id=$("preventionBuildingId").value;if(!id)return;$("preventionDialog").close();window.fireMapPreplans?.openLegacyPreplanById?.(id)};
   $("openOperationalView").onclick=()=>{const id=$("preventionBuildingId").value;if(id)openOperational(id)};
   $("closeOperationalBuilding").onclick=()=>{
     $("operationalBuildingDialog").close();
@@ -419,12 +417,6 @@
     forceReadOnlyFromOperationalView=true;
     $("operationalBuildingDialog").close();
     open(operationalBuildingId);
-  };
-  let sectionsCollapsed=false;
-  $("toggleBuildingSections").onclick=()=>{
-    sectionsCollapsed=!sectionsCollapsed;
-    document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.toggle("form-section-collapsed",sectionsCollapsed));
-    $("toggleBuildingSections").textContent=sectionsCollapsed?"↕ Ouvrir les sections":"↕ Réduire les sections";
   };
   $("preventionForm").onsubmit=save;
   $("preventionForm").addEventListener("input",updateLiveScore);$("preventionForm").addEventListener("change",updateLiveScore);

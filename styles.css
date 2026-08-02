@@ -614,3 +614,26 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
 #preventionForm.intervention-readonly .modal-actions button[type="submit"]{
   display:none!important;
 }
+
+
+/* FireMap V20.2.5 — barre de fiche simplifiée */
+.building-main-actions{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+#openOperationalView{
+  grid-column:auto!important;
+}
+@media(max-width:700px){
+  .building-main-actions{
+    grid-template-columns:1fr 1fr!important;
+  }
+  #openOperationalView{
+    grid-column:1/-1!important;
+  }
+  .building-main-actions .primary,
+  .building-main-actions .secondary{
+    min-width:0!important;
+    white-space:normal!important;
+  }
+}
