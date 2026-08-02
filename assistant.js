@@ -21,7 +21,21 @@
     $("assistantHydrants").innerHTML=nearest.map((p,i)=>`<article class="assistant-hydrant ${i===0?'recommended':''}"><div class="assistant-rank">${i+1}</div><div><strong>${esc(p.name||"Borne")}</strong><span>${esc(p.address||"Adresse non inscrite")}</span><small>${flowLabel(p)} · ${routeLabel(p)}${isFinite(p.duration)?` · ~${Math.max(1,Math.round(p.duration/60))} min`:""} · ${p.status==="restricted"?"À inspecter":"Disponible"}</small></div><button data-assistant-hydrant="${esc(p.id)}" class="secondary small">Carte</button></article>`).join("")||"<p>Aucune borne disponible.</p>";
     $("assistantPreplanPanel").classList.toggle("hidden",!b);if(b)$("assistantPreplanSummary").innerHTML=`<div class="assistant-summary"><strong>${esc(b.name)}</strong><span>Risque ${esc(b.risk||"non défini")} · ${esc(String(b.floors||"?"))} étage(s)</span><p>${esc(b.attackSide||b.notes||"Consultez le préplan complet pour les détails opérationnels.")}</p></div>`;
   }
-  function start(a,meta={}){active={...a,...meta};$("assistantAddress").value=a.adresse;I.selectAddress(a,false);I.showView("assistant");render()}
+  function start(a,meta={}){
+    active={...a,...meta};
+    $("assistantAddress").value=a.adresse;
+    I.selectAddress(a,false);
+    I.showView("assistant");
+    render();
+    window.dispatchEvent(new CustomEvent("firemap:call-active",{detail:{
+      ...active,
+      adresse:active.adresse||a.adresse||"",
+      address:active.adresse||a.adresse||"",
+      callType:active.callType||meta.callType||"Intervention",
+      alarmLevel:active.alarmLevel||meta.alarmLevel||"",
+      startedAt:active.startedAt||meta.startedAt||new Date().toISOString()
+    }}));
+  }
   function suggestions(){const q=$("assistantAddress").value.trim();if(q.length<2){$("assistantSuggestions").innerHTML="";return}const nq=I.addressNorm(q);const list=I.getAddresses().filter(a=>I.addressNorm(a.adresse).includes(nq)).slice(0,8);$("assistantSuggestions").innerHTML=list.map((a,i)=>`<button type="button" data-assistant-address="${i}"><strong>${esc(a.adresse)}</strong></button>`).join("");$("assistantSuggestions")._items=list}
 
   function cleanSms(text){return String(text||"").replace(/https?:\/\/\S+/gi," ").replace(/[()]/g," ").replace(/\s+/g," ").trim()}
