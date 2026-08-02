@@ -715,3 +715,66 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
   font-size:12px;
   font-weight:700;
 }
+
+
+/* FireMap V20.3.0 — fiches d'utilisation des véhicules */
+.vehicle-usage-section{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid #26344d;
+}
+.vehicle-usage-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.vehicle-usage-head h3{margin:3px 0 0}
+.vehicle-usage-list{display:grid;gap:10px}
+.vehicle-usage-card{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:12px;
+  align-items:center;
+  padding:13px;
+  border:1px solid #26344d;
+  border-radius:15px;
+  background:#080d15;
+}
+.vehicle-usage-icon{font-size:30px}
+.vehicle-usage-main h4{margin:0 0 3px}
+.vehicle-usage-main strong{color:#93c5fd}
+.vehicle-usage-main p{margin:3px 0;color:#cbd5e1}
+.vehicle-usage-main small{color:#94a3b8}
+.vehicle-usage-dialog{width:min(760px,96vw)}
+.quick-status-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+.quick-status-grid button{
+  min-height:54px;
+  border:1px solid #334155;
+  border-radius:13px;
+  background:#070b12;
+  color:#fff;
+  font-weight:900;
+}
+.quick-status-grid button.active{
+  border-color:#ef4444;
+  background:#2a0b0f;
+  color:#fecaca;
+  box-shadow:0 0 0 2px rgba(239,68,68,.2);
+}
+.usage-status-text{
+  margin:10px 0 0;
+  font-weight:900;
+  color:#bfdbfe;
+}
+@media(max-width:620px){
+  .vehicle-usage-head{align-items:flex-start}
+  .vehicle-usage-card{grid-template-columns:auto 1fr}
+  .vehicle-usage-card>button{grid-column:1/-1}
+  .quick-status-grid{grid-template-columns:1fr}
+}

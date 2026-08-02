@@ -48,6 +48,9 @@
       subscribeVehicles(ok, fail) { return fs.onSnapshot(fs.collection(db, "vehicules"), s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))), fail); },
       saveVehicle(v) { const data={...v,id:String(v.id),lat:Number(v.lat),lng:Number(v.lng),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"vehicules",String(v.id)),data,{merge:true}); },
       deleteVehicle(id) { return fs.deleteDoc(fs.doc(db,"vehicules",String(id))); },
+      subscribeVehicleUsages(ok, fail) { return fs.onSnapshot(fs.collection(db, "utilisations_vehicules"), s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))), fail); },
+      saveVehicleUsage(v) { const data={...v,id:String(v.id),vehicleId:String(v.vehicleId||""),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"utilisations_vehicules",String(v.id)),data,{merge:true}); },
+      deleteVehicleUsage(id) { return fs.deleteDoc(fs.doc(db,"utilisations_vehicules",String(id))); },
       subscribeStation(ok, fail) { return fs.onSnapshot(fs.doc(db,"configuration","caserne"), d => ok(d.exists()?{id:d.id,...d.data()}:null), fail); },
       saveStation(v) { const data={...v,lat:Number(v.lat),lng:Number(v.lng),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"configuration","caserne"),data,{merge:true}); },
       async saveMany(items) {

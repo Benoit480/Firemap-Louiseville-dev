@@ -149,6 +149,13 @@
       </section>
       <div class="vehicle-toolbar"><div><strong>Flotte officielle</strong><span id="vehicleSyncStatus">Chargement…</span></div><button id="stopSharingAll" class="danger small hidden">Arrêter mon partage GPS</button></div>
       <div id="vehicleList" class="vehicle-list"></div>
+      <section class="vehicle-usage-section">
+        <div class="vehicle-usage-head">
+          <div><small>INTERVENTIONS</small><h3>📋 Fiches d’utilisation des véhicules</h3></div>
+          <button id="newVehicleUsage" class="primary small">＋ Nouvelle fiche</button>
+        </div>
+        <div id="vehicleUsageList" class="vehicle-usage-list"></div>
+      </section>
     </section>
 
     <section id="view-inspections" class="view">
@@ -327,6 +334,81 @@
     </form>
   </dialog>
 
+
+  <dialog id="vehicleUsageDialog" class="vehicle-dialog vehicle-usage-dialog">
+    <form id="vehicleUsageForm" method="dialog">
+      <div class="modal-head">
+        <div><small>UTILISATION EN INTERVENTION</small><h2 id="vehicleUsageTitle">Fiche véhicule</h2></div>
+        <button type="button" id="closeVehicleUsageDialog">×</button>
+      </div>
+
+      <input type="hidden" id="vehicleUsageId">
+
+      <div class="form-section">
+        <h3>🚒 Véhicule et état</h3>
+        <div class="form-grid">
+          <label class="wide">Véhicule
+            <select id="vehicleUsageVehicle" required></select>
+          </label>
+        </div>
+        <div class="quick-status-grid" id="vehicleUsageQuickStatus">
+          <button type="button" data-usage-status="station">🏠 En caserne</button>
+          <button type="button" data-usage-status="enroute">🚨 En route</button>
+          <button type="button" data-usage-status="onscene">📍 Arrivé sur les lieux</button>
+          <button type="button" data-usage-status="returning">↩️ Retour vers caserne</button>
+        </div>
+        <input type="hidden" id="vehicleUsageStatus" value="station">
+        <p id="vehicleUsageStatusText" class="usage-status-text">État : En caserne</p>
+      </div>
+
+      <div class="form-section">
+        <h3>👨‍🚒 Effectif</h3>
+        <div class="form-grid">
+          <label>Nombre de pompiers
+            <input id="vehicleUsageFirefighters" type="number" min="0" max="20" step="1" value="0">
+          </label>
+          <label>Alimenté
+            <select id="vehicleUsageSupplied">
+              <option value="no">Non</option>
+              <option value="hydrant">Oui — borne</option>
+              <option value="tanker">Oui — citerne</option>
+              <option value="relay">Oui — relais</option>
+              <option value="other">Oui — autre</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>💧 Pompe et sorties</h3>
+        <div class="form-grid">
+          <label>Nombre de sorties utilisées
+            <input id="vehicleUsageOutlets" type="number" min="0" max="12" step="1" value="0">
+          </label>
+          <label>Pression utilisée (PSI)
+            <input id="vehicleUsagePressure" type="number" min="0" step="1" inputmode="decimal">
+          </label>
+          <label>Résiduel initial (PSI)
+            <input id="vehicleUsageResidualStart" type="number" min="0" step="1" inputmode="decimal">
+          </label>
+          <label>Résiduel final (PSI)
+            <input id="vehicleUsageResidualEnd" type="number" min="0" step="1" inputmode="decimal">
+          </label>
+          <label class="wide">Notes
+            <textarea id="vehicleUsageNotes" rows="3" placeholder="Borne utilisée, problème, observation…"></textarea>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="deleteVehicleUsage" class="danger hidden">Supprimer</button>
+        <span></span>
+        <button type="button" id="cancelVehicleUsageDialog" class="secondary">Annuler</button>
+        <button type="submit" class="primary">Enregistrer la fiche</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="stationDialog" class="vehicle-dialog">
     <form id="stationForm" method="dialog">
       <div class="modal-head"><div><small>CASERNE</small><h2>Configurer la caserne</h2></div><button type="button" id="closeStationDialog">×</button></div>
@@ -352,5 +434,6 @@
   <script src="assistant.js"></script>
   <script src="navigation.js"></script>
   <script src="vehicles.js"></script>
+  <script src="vehicle-usage.js"></script>
 </body>
 </html>
