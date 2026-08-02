@@ -86,7 +86,7 @@
     return canonical({...old,id,buildingId:id,inspector:entry.inspector,visitDate,nextReview:$("preventionNextReview").value,occupancy:Number($("preventionOccupancy").value||0),accessCode:$("preventionAccessCode").value.trim(),checks,risks,electricalNotes:$("pvElectricalNotes").value.trim(),gasNotes:$("pvGasNotes").value.trim(),fdcNotes:$("pvFdcNotes").value.trim(),accessNotes:$("pvAccessNotes").value.trim(),hazmatNotes:$("pvHazmatNotes").value.trim(),photoUrls:$("pvPhotoUrls").value,photosByCategory:JSON.parse(JSON.stringify(draftPhotos||{})),observations:entry.observations,visits:same?old.visits:[entry,...old.visits].slice(0,20)});
   }
   function updateLiveScore(){const id=$("preventionBuildingId").value;if(!id)return;const b=buildings().find(x=>String(x.id)===String(id));const r=formRecord();const s=score(r,b);$("preventionScoreValue").textContent=s+" %";$("preventionScoreBar").style.width=s+"%";$("preventionScoreBar").className=scoreState(s);$("preventionScoreLabel").textContent=scoreLabel(s)}
-  async function save(e){e.preventDefault();if(!preventionEditMode){I.toast("Appuyez sur Modifier pour changer la fiche.");return;}if(hasActiveIntervention()){I.toast("Mode intervention : fiche en lecture seule.");return;}const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
+  async function save(e){e.preventDefault();if(!preventionEditMode){I.toast("Appuyez sur Modifier pour changer la fiche.");return;}if(forceReadOnlyFromOperationalView){I.toast("Vue intervention : fiche en lecture seule.");return;}const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
   async function flush(){const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)return;for(const [id,r] of Object.entries(pending()))try{await c.savePrevention(r);clearPending(id)}catch(e){console.error(e)}}
   function connect(){const c=window.fireMapCloud;if(!c?.configured||!c.subscribePrevention){render();return}if(cloudUnsub)cloudUnsub();cloudUnsub=c.subscribePrevention(items=>{const p=pending();records=new Map(items.map(x=>{const r=canonical(x);return[r.id,r]}));Object.values(p).forEach(x=>{const r=canonical(x);records.set(r.id,r)});persist();render();flush()},e=>{console.error(e);I.toast("Prévention en mode local.")});flush()}
   function preplanHtml(id){
@@ -390,6 +390,7 @@
 
   function openEditable(id){
     forceReadOnlyFromOperationalView=false;
+    setPreventionReadOnly(false);
     open(id);
   }
 
@@ -420,7 +421,7 @@
 
     const edit=$("editPreventionButton");
     if(edit){
-      const interventionLocked=hasActiveIntervention();
+      const interventionLocked=forceReadOnlyFromOperationalView;
       edit.classList.toggle("hidden",!readOnly||interventionLocked);
     }
 
@@ -429,10 +430,12 @@
   }
 
   function enablePreventionEditing(){
-    if(hasActiveIntervention()){
-      I.toast("Mode intervention : fiche en consultation seulement.");
+    if(forceReadOnlyFromOperationalView){
+      I.toast("Vue intervention : fiche en consultation seulement.");
       return;
     }
+    // Nettoyer un ancien verrouillage d'intervention avant d'activer l'édition normale.
+    setPreventionReadOnly(false);
     setDefaultReadOnly(false);
     I.toast("Mode modification activé.");
   }
