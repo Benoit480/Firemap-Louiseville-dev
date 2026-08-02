@@ -63,7 +63,7 @@
       if(filter==="complete"&&s<80)return false;if(filter==="incomplete"&&s>=80)return false;if(filter==="overdue"&&!overdue(r))return false;if(filter==="never"&&r.visitDate)return false;
       return true;
     }).sort((a,b)=>(overdue(b.r)-overdue(a.r))||(a.s-b.s)||a.b.name.localeCompare(b.b.name,"fr"));
-    $("preventionBuildingList").innerHTML=list.map(({b,r,s})=>`<article class="card-item prevention-building-card"><div class="prevention-building-head"><div><h3>${esc(b.name)}</h3><p>${esc(b.address)||"Adresse non inscrite"}</p></div><div class="score-badge ${scoreState(s)}">${s}%</div></div><div class="score-track"><span class="${scoreState(s)}" style="width:${s}%"></span></div><div class="prevention-meta"><span>${r.visitDate?`Dernière visite : ${esc(r.visitDate)}`:"Jamais visité"}</span><span class="${overdue(r)?"overdue":""}">${overdue(r)?"⚠️ Mise à jour requise":scoreLabel(s)}</span></div><div class="card-actions"><button class="primary" data-prevention-edit="${esc(b.id)}">🛡️ Faire la visite</button><button class="secondary" data-prevention-preplan="${esc(b.id)}">📁 Anciennes données</button><button class="secondary" data-prevention-map="${esc(b.id)}">🗺️ Carte</button></div></article>`).join("")||'<div class="card-item">Aucun bâtiment correspondant.</div>';
+    $("preventionBuildingList").innerHTML=list.map(({b,r,s})=>`<article class="card-item prevention-building-card"><div class="prevention-building-head"><div><h3>${esc(b.name)}</h3><p>${esc(b.address)||"Adresse non inscrite"}</p></div><div class="score-badge ${scoreState(s)}">${s}%</div></div><div class="score-track"><span class="${scoreState(s)}" style="width:${s}%"></span></div><div class="prevention-meta"><span>${r.visitDate?`Dernière visite : ${esc(r.visitDate)}`:"Jamais visité"}</span><span class="${overdue(r)?"overdue":""}">${overdue(r)?"⚠️ Mise à jour requise":scoreLabel(s)}</span></div><div class="card-actions"><button class="primary" data-prevention-edit="${esc(b.id)}">🏢 Ouvrir la fiche</button><button class="secondary operational-card-btn" data-prevention-operational="${esc(b.id)}">🚨 Vue intervention</button><button class="secondary" data-prevention-preplan="${esc(b.id)}">📁 Anciennes données</button><button class="secondary" data-prevention-map="${esc(b.id)}">🗺️ Carte</button></div></article>`).join("")||'<div class="card-item">Aucun bâtiment correspondant.</div>';
   }
   function setCheck(id,v){$(id).checked=Boolean(v)}
   function open(id){
@@ -74,6 +74,8 @@
     draftPhotos=structuredClone?r.photosByCategory?structuredClone(r.photosByCategory):{}:JSON.parse(JSON.stringify(r.photosByCategory||{}));
     $("pvElectricalNotes").value=r.electricalNotes;$("pvGasNotes").value=r.gasNotes;$("pvFdcNotes").value=r.fdcNotes;$("pvAccessNotes").value=r.accessNotes;$("pvHazmatNotes").value=r.hazmatNotes;$("pvPhotoUrls").value=r.photoUrls.join("\n");$("pvObservations").value=r.observations;
     $("preventionVisitHistory").innerHTML=r.visits.length?r.visits.map(v=>`<div class="visit-item"><strong>${esc(v.date||"")}</strong><span>${esc(v.inspector||"Inspecteur non inscrit")}</span><p>${esc(v.observations||"Aucune observation")}</p></div>`).join(""):'<p class="muted">Aucune visite enregistrée.</p>';
+    document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.remove("form-section-collapsed"));
+    const toggle=$("toggleBuildingSections");if(toggle)toggle.textContent="↕ Réduire les sections";
     renderAllPhotoGalleries();updateLiveScore();$("preventionDialog").showModal();
   }
   function formRecord(){
@@ -110,7 +112,7 @@
       return `<a class="preplan-photo-card" href="${esc(photo.url)}" target="_blank" rel="noopener"><img src="${esc(photo.url)}" alt="${esc(label)}" loading="lazy"><span>${esc(label)}</span></a>`;
     }).join("");
     const risksHtml=risks.length?`<section class="preplan-section preplan-alert"><h3>☣️ Risques particuliers</h3><p>${esc(risks.join(", "))}</p>${r.hazmatNotes?`<p>${esc(r.hazmatNotes)}</p>`:""}</section>`:"";
-    return `<section class="preplan-section prevention-summary preplan-from-prevention"><div class="preplan-prevention-title"><h3>🛡️ Préplan issu de la prévention</h3><span class="score-badge ${scoreState(sc)}">${sc}%</span></div><div class="score-track"><span class="${scoreState(sc)}" style="width:${sc}%"></span></div><p><strong>Dernière visite :</strong> ${esc(r.visitDate||"Non inscrite")} ${r.inspector?`— ${esc(r.inspector)}`:""}</p>${r.nextReview?`<p><strong>Prochaine révision :</strong> ${esc(r.nextReview)}</p>`:""}${r.occupancy?`<p><strong>Occupation maximale :</strong> ${esc(String(r.occupancy))}</p>`:""}${r.accessCode?`<p><strong>Code d’accès :</strong> ${esc(r.accessCode)}</p>`:""}</section><section class="preplan-section"><h3>✅ Éléments opérationnels vérifiés</h3><ul class="preplan-check-list">${checked||"<li>Aucun élément confirmé.</li>"}</ul>${unchecked?`<details><summary>Éléments non confirmés</summary><ul class="preplan-check-list">${unchecked}</ul></details>`:""}</section>${risksHtml}${r.electricalNotes?`<section class="preplan-section"><h3>⚡ Électricité</h3><p>${esc(r.electricalNotes)}</p></section>`:""}${r.gasNotes?`<section class="preplan-section"><h3>🔥 Gaz / propane</h3><p>${esc(r.gasNotes)}</p></section>`:""}${r.fdcNotes?`<section class="preplan-section"><h3>🚒 FDC</h3><p>${esc(r.fdcNotes)}</p></section>`:""}${r.accessNotes?`<section class="preplan-section"><h3>🚪 Accès</h3><p>${esc(r.accessNotes)}</p></section>`:""}${r.observations?`<section class="preplan-section"><h3>📝 Observations de prévention</h3><p>${esc(r.observations).replace(/\n/g,"<br>")}</p></section>`:""}${photos?`<section class="preplan-section"><h3>📷 Photos opérationnelles</h3><div class="preplan-photo-grid">${photos}</div></section>`:""}`;
+    return `<section class="preplan-section prevention-summary preplan-from-prevention"><div class="preplan-prevention-title"><h3>🚨 Fiche opérationnelle du bâtiment</h3><span class="score-badge ${scoreState(sc)}">${sc}%</span></div><div class="score-track"><span class="${scoreState(sc)}" style="width:${sc}%"></span></div><p><strong>Dernière visite :</strong> ${esc(r.visitDate||"Non inscrite")} ${r.inspector?`— ${esc(r.inspector)}`:""}</p>${r.nextReview?`<p><strong>Prochaine révision :</strong> ${esc(r.nextReview)}</p>`:""}${r.occupancy?`<p><strong>Occupation maximale :</strong> ${esc(String(r.occupancy))}</p>`:""}${r.accessCode?`<p><strong>Code d’accès :</strong> ${esc(r.accessCode)}</p>`:""}</section><section class="preplan-section"><h3>✅ Éléments opérationnels vérifiés</h3><ul class="preplan-check-list">${checked||"<li>Aucun élément confirmé.</li>"}</ul>${unchecked?`<details><summary>Éléments non confirmés</summary><ul class="preplan-check-list">${unchecked}</ul></details>`:""}</section>${risksHtml}${r.electricalNotes?`<section class="preplan-section"><h3>⚡ Électricité</h3><p>${esc(r.electricalNotes)}</p></section>`:""}${r.gasNotes?`<section class="preplan-section"><h3>🔥 Gaz / propane</h3><p>${esc(r.gasNotes)}</p></section>`:""}${r.fdcNotes?`<section class="preplan-section"><h3>🚒 FDC</h3><p>${esc(r.fdcNotes)}</p></section>`:""}${r.accessNotes?`<section class="preplan-section"><h3>🚪 Accès</h3><p>${esc(r.accessNotes)}</p></section>`:""}${r.observations?`<section class="preplan-section"><h3>📝 Observations de prévention</h3><p>${esc(r.observations).replace(/\n/g,"<br>")}</p></section>`:""}${photos?`<section class="preplan-section"><h3>📷 Photos opérationnelles</h3><div class="preplan-photo-grid">${photos}</div></section>`:""}`;
   }
   function renderPhotoGallery(category){
     const target=document.querySelector(`[data-photo-gallery="${category}"]`);if(!target)return;
@@ -147,12 +149,59 @@
     photos.splice(index,1);renderPhotoGallery(category);updateLiveScore();
     try{if(photo.path&&window.fireMapCloud?.deletePreventionPhoto)await window.fireMapCloud.deletePreventionPhoto(photo.path)}catch(err){console.warn(err)}
   }
-  window.fireMapPrevention={getRecordForBuilding:id=>records.get(String(id))||null,getScore:id=>{const b=buildings().find(x=>String(x.id)===String(id));return score(recordFor(id),b)},open,preplanHtml};
+  let operationalBuildingId="";
+  function operationalHtml(id){
+    const b=buildings().find(x=>String(x.id)===String(id));
+    if(!b)return '<section class="preplan-section preplan-alert"><h3>Bâtiment introuvable</h3></section>';
+    const r=recordFor(id), risks=riskNames(r);
+    const urgent=[];
+    if(r.accessCode)urgent.push(`<div><span>🔑 Accès</span><strong>${esc(r.accessCode)}</strong></div>`);
+    if(r.fdcNotes)urgent.push(`<div><span>🚒 FDC</span><strong>${esc(r.fdcNotes)}</strong></div>`);
+    if(r.electricalNotes)urgent.push(`<div><span>⚡ Électricité</span><strong>${esc(r.electricalNotes)}</strong></div>`);
+    if(r.gasNotes)urgent.push(`<div><span>🔥 Gaz</span><strong>${esc(r.gasNotes)}</strong></div>`);
+    if(r.accessNotes)urgent.push(`<div><span>🚪 Accès pompier</span><strong>${esc(r.accessNotes)}</strong></div>`);
+    if(r.hazmatNotes)urgent.push(`<div><span>☣️ Matières dangereuses</span><strong>${esc(r.hazmatNotes)}</strong></div>`);
+    const photos=Object.entries(r.photosByCategory||{}).flatMap(([category,list])=>(list||[]).map(photo=>({category,photo}))).slice(0,12).map(({category,photo})=>{
+      const label=Object.values(photoCategories).find(x=>x.key===category)?.label||category;
+      return `<a class="operational-photo" href="${esc(photo.url)}" target="_blank" rel="noopener"><img src="${esc(photo.url)}" alt="${esc(label)}" loading="lazy"><span>${esc(label)}</span></a>`;
+    }).join("");
+    const priorityRisks=risks.length?`<section class="preplan-section operational-danger"><h3>☣️ RISQUES CONFIRMÉS</h3><p>${esc(risks.join(" • "))}</p></section>`:"";
+    return `<section class="operational-building-header">
+      <div><small>BÂTIMENT</small><h2>${esc(b.name||"Bâtiment")}</h2><p>${esc(b.address||"Adresse non inscrite")}</p></div>
+      <span class="score-badge ${scoreState(score(r,b))}">${score(r,b)}%</span>
+    </section>
+    ${priorityRisks}
+    <section class="preplan-section operational-priority"><h3>⚡ Informations prioritaires</h3>
+      <div class="operational-priority-grid">${urgent.length?urgent.join(""):'<p>Aucune information opérationnelle prioritaire inscrite.</p>'}</div>
+    </section>
+    ${r.occupancy?`<section class="preplan-section"><h3>👥 Occupation maximale</h3><p class="operational-big-value">${esc(String(r.occupancy))}</p></section>`:""}
+    ${photos?`<section class="preplan-section"><h3>📷 Photos critiques</h3><div class="operational-photo-grid">${photos}</div></section>`:""}
+    ${preplanHtml(id)}`;
+  }
+  function openOperational(id){
+    const b=buildings().find(x=>String(x.id)===String(id));if(!b)return I.toast("Bâtiment introuvable.");
+    operationalBuildingId=String(id);
+    $("operationalBuildingTitle").textContent=b.name||"Fiche opérationnelle";
+    $("operationalBuildingContent").innerHTML=operationalHtml(id);
+    $("operationalBuildingDialog").showModal();
+  }
+  window.fireMapPrevention={getRecordForBuilding:id=>records.get(String(id))||null,getScore:id=>{const b=buildings().find(x=>String(x.id)===String(id));return score(recordFor(id),b)},open,openOperational,preplanHtml};
   $("preventionBackMap").onclick=()=>I.showView("map");$("preventionSearch").oninput=render;$("preventionFilter").onchange=render;$("closePreventionDialog").onclick=$("cancelPreventionDialog").onclick=()=>$("preventionDialog").close();
   $("openLegacyPreplan").onclick=()=>{const id=$("preventionBuildingId").value;if(!id)return;$("preventionDialog").close();window.fireMapPreplans?.openLegacyPreplanById?.(id)};
+  $("openOperationalView").onclick=()=>{const id=$("preventionBuildingId").value;if(id)openOperational(id)};
+  $("closeOperationalBuilding").onclick=()=>$("operationalBuildingDialog").close();
+  $("operationalShowMap").onclick=()=>{if(!operationalBuildingId)return;$("operationalBuildingDialog").close();window.fireMapPreplans?.showBuildingOnMap?.(operationalBuildingId)};
+  $("operationalNavigate").onclick=()=>{if(!operationalBuildingId)return;const b=buildings().find(x=>String(x.id)===String(operationalBuildingId));if(b)I.openNavigation?.(b)};
+  $("operationalEditBuilding").onclick=()=>{if(!operationalBuildingId)return;$("operationalBuildingDialog").close();open(operationalBuildingId)};
+  let sectionsCollapsed=false;
+  $("toggleBuildingSections").onclick=()=>{
+    sectionsCollapsed=!sectionsCollapsed;
+    document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.toggle("form-section-collapsed",sectionsCollapsed));
+    $("toggleBuildingSections").textContent=sectionsCollapsed?"↕ Ouvrir les sections":"↕ Réduire les sections";
+  };
   $("preventionForm").onsubmit=save;
   $("preventionForm").addEventListener("input",updateLiveScore);$("preventionForm").addEventListener("change",updateLiveScore);
-  document.addEventListener("click",e=>{const camera=e.target.closest("[data-photo-camera]");if(camera){document.querySelector(`[data-photo-input="${camera.dataset.photoCamera}"][data-source="camera"]`)?.click();return}const imp=e.target.closest("[data-photo-import]");if(imp){document.querySelector(`[data-photo-input="${imp.dataset.photoImport}"][data-source="library"]`)?.click();return}const del=e.target.closest("[data-photo-delete]");if(del){deleteCategoryPhoto(del.dataset.photoDelete,Number(del.dataset.photoIndex));return}const ed=e.target.closest("[data-prevention-edit]");if(ed)open(ed.dataset.preventionEdit);const pp=e.target.closest("[data-prevention-preplan]");if(pp)window.fireMapPreplans?.openLegacyPreplanById?.(pp.dataset.preventionPreplan);const mp=e.target.closest("[data-prevention-map]");if(mp)window.fireMapPreplans?.showBuildingOnMap?.(mp.dataset.preventionMap)});
+  document.addEventListener("click",e=>{const camera=e.target.closest("[data-photo-camera]");if(camera){document.querySelector(`[data-photo-input="${camera.dataset.photoCamera}"][data-source="camera"]`)?.click();return}const imp=e.target.closest("[data-photo-import]");if(imp){document.querySelector(`[data-photo-input="${imp.dataset.photoImport}"][data-source="library"]`)?.click();return}const del=e.target.closest("[data-photo-delete]");if(del){deleteCategoryPhoto(del.dataset.photoDelete,Number(del.dataset.photoIndex));return}const ed=e.target.closest("[data-prevention-edit]");if(ed)open(ed.dataset.preventionEdit);const op=e.target.closest("[data-prevention-operational]");if(op)openOperational(op.dataset.preventionOperational);const pp=e.target.closest("[data-prevention-preplan]");if(pp)window.fireMapPreplans?.openLegacyPreplanById?.(pp.dataset.preventionPreplan);const mp=e.target.closest("[data-prevention-map]");if(mp)window.fireMapPreplans?.showBuildingOnMap?.(mp.dataset.preventionMap)});
   document.addEventListener("change",e=>{const input=e.target.closest("[data-photo-input]");if(input&&input.files?.length){uploadCategoryPhotos(input.dataset.photoInput,[...input.files]);input.value=""}});
   window.addEventListener("firemap:buildings-updated",render);window.addEventListener("firemap-preplans-ready",render);window.addEventListener("online",flush);
   setupCategoryPhotoControls();read(CACHE,[]).map(canonical).forEach(r=>records.set(r.id,r));render();if(window.fireMapCloud)connect();else window.addEventListener("firemap-cloud-ready",connect,{once:true});

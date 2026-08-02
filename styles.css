@@ -333,3 +333,137 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
     grid-column:1/-1;
   }
 }
+
+
+/* FireMap V20.2.0 — fiche Bâtiment opérationnelle */
+.operational-building-dialog{
+  width:min(900px,97vw);
+  max-height:94vh;
+}
+.operational-dialog-shell{
+  background:#05080e;
+  color:#fff;
+}
+.operational-dialog-actions{
+  position:sticky;
+  bottom:0;
+  z-index:10;
+  background:rgba(5,8,14,.98);
+  border-top:1px solid #26344d;
+  padding:12px;
+}
+.operational-building-header{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:flex-start;
+  padding:16px;
+  margin:12px;
+  border:1px solid #334155;
+  border-radius:18px;
+  background:#080d15;
+}
+.operational-building-header h2{
+  margin:4px 0;
+  color:#fff;
+}
+.operational-building-header p{
+  margin:0;
+  color:#94a3b8;
+}
+.operational-danger{
+  border:2px solid #ef4444!important;
+  background:#260b0f!important;
+}
+.operational-danger h3,
+.operational-danger p{
+  color:#fecaca!important;
+}
+.operational-priority{
+  border-color:#2563eb!important;
+}
+.operational-priority-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.operational-priority-grid>div{
+  background:#05080e;
+  border:1px solid #334155;
+  border-radius:13px;
+  padding:12px;
+}
+.operational-priority-grid span{
+  display:block;
+  color:#93c5fd;
+  font-weight:800;
+  margin-bottom:5px;
+}
+.operational-priority-grid strong{
+  color:#fff;
+  white-space:pre-wrap;
+}
+.operational-photo-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.operational-photo{
+  display:block;
+  position:relative;
+  border:1px solid #334155;
+  border-radius:14px;
+  overflow:hidden;
+  background:#05080e;
+}
+.operational-photo img{
+  width:100%;
+  height:150px;
+  object-fit:cover;
+  display:block;
+}
+.operational-photo span{
+  display:block;
+  padding:8px;
+  color:#fff;
+  font-weight:800;
+}
+.operational-big-value{
+  font-size:2rem;
+  font-weight:950;
+  color:#fff;
+}
+.form-section-collapsed{
+  padding:0!important;
+  overflow:hidden;
+}
+.form-section-collapsed>h3{
+  margin:0!important;
+  padding:14px;
+  cursor:pointer;
+}
+.form-section-collapsed>:not(h3){
+  display:none!important;
+}
+.building-main-actions{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+}
+.operational-card-btn{
+  border-color:#ef4444!important;
+  color:#fecaca!important;
+}
+@media(max-width:700px){
+  .operational-priority-grid,
+  .operational-photo-grid{
+    grid-template-columns:1fr;
+  }
+  .operational-photo img{
+    height:220px;
+  }
+  .building-main-actions{
+    grid-template-columns:1fr 1fr;
+  }
+  #openOperationalView{
+    grid-column:1/-1;
+  }
+}

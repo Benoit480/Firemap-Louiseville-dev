@@ -277,8 +277,30 @@
         <label class="wide">Observations de la visite<textarea id="pvObservations" rows="4" placeholder="Anomalies, corrections demandées et notes de suivi"></textarea></label>
       </div></div>
       <section class="form-section"><h3>Historique des visites</h3><div id="preventionVisitHistory" class="visit-history"></div></section>
-      <div class="modal-actions building-main-actions"><button type="button" id="openLegacyPreplan" class="secondary">📁 Anciennes données</button><span></span><button type="button" id="cancelPreventionDialog" class="secondary">Annuler</button><button type="submit" class="primary">Enregistrer la fiche</button></div>
+      <div class="modal-actions building-main-actions">
+        <button type="button" id="openOperationalView" class="primary">🚨 Vue intervention</button>
+        <button type="button" id="toggleBuildingSections" class="secondary">↕ Réduire les sections</button>
+        <button type="button" id="openLegacyPreplan" class="secondary">📁 Anciennes données</button>
+        <button type="button" id="cancelPreventionDialog" class="secondary">Annuler</button>
+        <button type="submit" class="primary">Enregistrer la fiche</button>
+      </div>
     </form>
+  </dialog>
+
+
+  <dialog id="operationalBuildingDialog" class="preplan-dialog operational-building-dialog">
+    <div class="operational-dialog-shell">
+      <div class="modal-head">
+        <div><small>MODE INTERVENTION</small><h2 id="operationalBuildingTitle">Fiche opérationnelle</h2></div>
+        <button type="button" id="closeOperationalBuilding">×</button>
+      </div>
+      <div id="operationalBuildingContent"></div>
+      <div class="modal-actions operational-dialog-actions">
+        <button type="button" id="operationalShowMap" class="secondary">🗺️ Carte</button>
+        <button type="button" id="operationalNavigate" class="primary">➤ Naviguer</button>
+        <button type="button" id="operationalEditBuilding" class="secondary">✏️ Modifier la fiche</button>
+      </div>
+    </div>
   </dialog>
 
   <dialog id="vehicleDialog" class="vehicle-dialog">
