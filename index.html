@@ -237,6 +237,8 @@
 
   <dialog id="preventionDialog" class="prevention-dialog">
     <form id="preventionForm" method="dialog">
+      <input id="categoryCameraInput" type="file" accept="image/*" capture="environment" multiple hidden>
+      <input id="categoryImportInput" type="file" accept="image/*" multiple hidden>
       <div class="modal-head"><div><small>FICHE BÂTIMENT — PRÉVENTION ET OPÉRATIONS</small><h2 id="preventionDialogTitle">Fiche du bâtiment</h2></div><button type="button" id="closePreventionDialog">×</button></div>
       <input type="hidden" id="preventionBuildingId">
       <div class="prevention-score-card"><div><small>PRÉPARATION OPÉRATIONNELLE</small><strong id="preventionScoreValue">0 %</strong></div><div class="score-track"><span id="preventionScoreBar"></span></div><p id="preventionScoreLabel">Informations à compléter</p></div>

@@ -76,7 +76,7 @@
     $("preventionVisitHistory").innerHTML=r.visits.length?r.visits.map(v=>`<div class="visit-item"><strong>${esc(v.date||"")}</strong><span>${esc(v.inspector||"Inspecteur non inscrit")}</span><p>${esc(v.observations||"Aucune observation")}</p></div>`).join(""):'<p class="muted">Aucune visite enregistrée.</p>';
     document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.remove("form-section-collapsed"));
     const toggle=$("toggleBuildingSections");if(toggle)toggle.textContent="↕ Réduire les sections";
-    renderAllPhotoGalleries();updateLiveScore();$("preventionDialog").showModal();
+    decoratePhotoRows();renderAllPhotoGalleries();renderAllCategoryGalleries();updateLiveScore();$("preventionDialog").showModal();
   }
   function formRecord(){
     const id=$("preventionBuildingId").value,old=recordFor(id),visitDate=$("preventionVisitDate").value||today();
@@ -185,6 +185,147 @@
     $("operationalBuildingContent").innerHTML=operationalHtml(id);
     $("operationalBuildingDialog").showModal();
   }
+
+  let activePhotoCategory = "";
+
+  function photoCategoryFromInput(input){
+    return input?.dataset?.photoCategory || input?.name || input?.id || "";
+  }
+
+  function categoryLabel(category){
+    const match=(photoCategories||[]).find?.(x=>x.key===category);
+    return match?.label || category;
+  }
+
+  function ensureCategoryPhotoToolbar(row, category){
+    if(!row || !category || row.querySelector(".category-photo-toolbar")) return;
+    const toolbar=document.createElement("div");
+    toolbar.className="category-photo-toolbar";
+    toolbar.dataset.category=category;
+    toolbar.innerHTML=`
+      <button type="button" class="category-photo-btn camera" data-photo-camera="${category}">📷 Prendre une photo</button>
+      <button type="button" class="category-photo-btn import" data-photo-import="${category}">🖼️ Importer</button>
+      <div class="category-photo-gallery" data-photo-gallery="${category}"></div>`;
+    row.appendChild(toolbar);
+  }
+
+  function decoratePhotoRows(){
+    const form=$("preventionForm");
+    if(!form) return;
+
+    form.querySelectorAll('input[type="checkbox"]').forEach(input=>{
+      const category=photoCategoryFromInput(input);
+      if(!category) return;
+      const row=input.closest("label") || input.parentElement;
+      ensureCategoryPhotoToolbar(row,category);
+    });
+
+    const locationFields=[
+      ["preventionElectricalNotes","operationalElectrical"],
+      ["preventionGasNotes","operationalGas"],
+      ["preventionWaterNotes","operationalWater"],
+      ["preventionFdcNotes","operationalFdc"],
+      ["preventionAccessNotes","operationalAccess"],
+      ["preventionMechanicalNotes","operationalMechanical"]
+    ];
+    locationFields.forEach(([id,category])=>{
+      const field=$(id);
+      if(!field) return;
+      const row=field.closest("label") || field.parentElement;
+      ensureCategoryPhotoToolbar(row,category);
+    });
+  }
+
+  function mutableCurrentRecord(){
+    const id=String($("preventionBuildingId")?.value||"");
+    if(!id) return null;
+    const r=records.get(id) || recordFor(id);
+    r.photosByCategory=r.photosByCategory||{};
+    return r;
+  }
+
+  function renderCategoryGallery(category){
+    const gallery=document.querySelector(`[data-photo-gallery="${CSS.escape(category)}"]`);
+    if(!gallery) return;
+    const r=mutableCurrentRecord();
+    const list=r?.photosByCategory?.[category]||[];
+    gallery.innerHTML=list.map((photo,index)=>`
+      <figure class="category-photo-thumb">
+        <a href="${esc(photo.url)}" target="_blank" rel="noopener">
+          <img src="${esc(photo.url)}" alt="${esc(categoryLabel(category))}" loading="lazy">
+        </a>
+        <button type="button" data-photo-delete="${category}" data-photo-index="${index}" aria-label="Supprimer">×</button>
+      </figure>`).join("");
+  }
+
+  function renderAllCategoryGalleries(){
+    document.querySelectorAll("[data-photo-gallery]").forEach(g=>renderCategoryGallery(g.dataset.photoGallery));
+  }
+
+  function fileToDataUrl(file){
+    return new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=()=>resolve(reader.result);
+      reader.onerror=reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function addCategoryFiles(fileList){
+    if(!activePhotoCategory || !fileList?.length) return;
+    const r=mutableCurrentRecord();
+    if(!r) return;
+    r.photosByCategory[activePhotoCategory]=r.photosByCategory[activePhotoCategory]||[];
+    for(const file of fileList){
+      if(!file.type.startsWith("image/")) continue;
+      const url=await fileToDataUrl(file);
+      r.photosByCategory[activePhotoCategory].push({
+        url,
+        name:file.name||`${activePhotoCategory}-${Date.now()}.jpg`,
+        createdAt:new Date().toISOString(),
+        local:true
+      });
+    }
+    records.set(String(r.id),r);
+    persist();
+    renderCategoryGallery(activePhotoCategory);
+    updateLiveScore();
+    I.toast("Photo ajoutée.");
+  }
+
+  document.addEventListener("click",e=>{
+    const camera=e.target.closest("[data-photo-camera]");
+    if(camera){
+      activePhotoCategory=camera.dataset.photoCamera;
+      $("categoryCameraInput").value="";
+      $("categoryCameraInput").click();
+      return;
+    }
+    const importer=e.target.closest("[data-photo-import]");
+    if(importer){
+      activePhotoCategory=importer.dataset.photoImport;
+      $("categoryImportInput").value="";
+      $("categoryImportInput").click();
+      return;
+    }
+    const del=e.target.closest("[data-photo-delete]");
+    if(del){
+      const r=mutableCurrentRecord();
+      if(!r) return;
+      const category=del.dataset.photoDelete;
+      const index=Number(del.dataset.photoIndex);
+      r.photosByCategory?.[category]?.splice(index,1);
+      records.set(String(r.id),r);
+      persist();
+      renderCategoryGallery(category);
+      updateLiveScore();
+      I.toast("Photo supprimée.");
+    }
+  });
+
+  $("categoryCameraInput")?.addEventListener("change",e=>addCategoryFiles([...e.target.files]));
+  $("categoryImportInput")?.addEventListener("change",e=>addCategoryFiles([...e.target.files]));
+
   window.fireMapPrevention={getRecordForBuilding:id=>records.get(String(id))||null,getScore:id=>{const b=buildings().find(x=>String(x.id)===String(id));return score(recordFor(id),b)},open,openOperational,preplanHtml};
   $("preventionBackMap").onclick=()=>I.showView("map");$("preventionSearch").oninput=render;$("preventionFilter").onchange=render;$("closePreventionDialog").onclick=$("cancelPreventionDialog").onclick=()=>$("preventionDialog").close();
   $("openLegacyPreplan").onclick=()=>{const id=$("preventionBuildingId").value;if(!id)return;$("preventionDialog").close();window.fireMapPreplans?.openLegacyPreplanById?.(id)};

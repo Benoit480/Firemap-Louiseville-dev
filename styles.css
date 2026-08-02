@@ -490,3 +490,79 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
   border-color:#ef4444;
   font-weight:900;
 }
+
+
+/* FireMap V20.2.2 — photos par colonne */
+.category-photo-toolbar{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  width:100%;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid #26344d;
+}
+.category-photo-btn{
+  min-height:42px;
+  border-radius:11px;
+  border:1px solid #334155;
+  background:#0a101b;
+  color:#fff;
+  font-weight:800;
+  font-size:14px;
+}
+.category-photo-btn.camera{
+  border-color:#dc2626;
+  color:#fecaca;
+}
+.category-photo-btn.import{
+  border-color:#2563eb;
+  color:#bfdbfe;
+}
+.category-photo-gallery{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.category-photo-thumb{
+  position:relative;
+  margin:0;
+  border:1px solid #334155;
+  border-radius:11px;
+  overflow:hidden;
+  background:#05080e;
+}
+.category-photo-thumb img{
+  width:100%;
+  height:100px;
+  object-fit:cover;
+  display:block;
+}
+.category-photo-thumb button{
+  position:absolute;
+  top:4px;
+  right:4px;
+  width:30px;
+  height:30px;
+  border:0;
+  border-radius:50%;
+  background:rgba(185,28,28,.95);
+  color:#fff;
+  font-size:20px;
+}
+#preventionForm label:has(.category-photo-toolbar){
+  flex-wrap:wrap;
+}
+@media(max-width:600px){
+  .category-photo-toolbar{
+    grid-template-columns:1fr;
+  }
+  .category-photo-gallery{
+    grid-column:1;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .category-photo-thumb img{
+    height:120px;
+  }
+}
