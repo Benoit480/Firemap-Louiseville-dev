@@ -132,10 +132,21 @@
     })[0] || null;
   }
   function usageActiveCount(usage) {
-    return window.fireMapVehicleUsage?.activeCount?.(usage) || 0;
+    if (!usage) return 0;
+    const normal = Object.values(usage.outlets || {}).filter(outlet => outlet?.active === true).length;
+    const fourInch = usage.special?.fourInch?.active === true ? 1 : 0;
+    const deckGun = usage.special?.deckGun?.active === true ? 1 : 0;
+    return normal + fourInch + deckGun;
   }
   function usageSupplyLabel(value) {
-    return window.fireMapVehicleUsage?.suppliedLabel?.(value) || "Non alimenté";
+    const key = String(value || "no").toLowerCase();
+    return ({
+      no: "Non alimenté",
+      hydrant: "Borne",
+      tanker: "Citerne",
+      relay: "Relais",
+      other: "Autre"
+    })[key] || String(value || "Non alimenté");
   }
   function usageState(usage, vehicle) {
     if (usage?.supplied && usage.supplied !== "no") {
@@ -211,7 +222,7 @@
           <div class="vehicle-profile-stats">
             <span>👨‍🚒 <strong>${Number(usage?.firefighters || 0)}</strong> pompier${Number(usage?.firefighters || 0) > 1 ? "s" : ""}</span>
             <span>💧 <strong>${esc(usageSupplyLabel(usage?.supplied || "no"))}</strong></span>
-            <span>🚿 <strong>${count}</strong> sortie${count > 1 ? "s" : ""} active${count > 1 ? "s" : ""}</span>
+            <span>🚿 <strong>${count}</strong> sortie${count !== 1 ? "s" : ""} active${count !== 1 ? "s" : ""}</span>
           </div>
           ${activeOutletSummary(usage)}
           ${usage?.residualStart !== "" && usage?.residualStart != null ? `<p class="vehicle-profile-pressure">Résiduel initial : <strong>${usage.residualStart} PSI</strong>${usage?.residualEnd !== "" && usage?.residualEnd != null ? ` · Final : <strong>${usage.residualEnd} PSI</strong>` : ""}</p>` : ""}

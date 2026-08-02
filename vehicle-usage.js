@@ -37,33 +37,114 @@
   function setActive(k,v){hid(k).value=v?"true":"false";const c=document.querySelector(`[data-outlet-card="${k}"]`);c?.classList.toggle("active",v);const b=c?.querySelector(".pump-outlet-toggle");b?.classList.toggle("active",v);const sm=b?.querySelector("small");if(sm)sm.textContent=v?"En service":(k==="deckGun"?"Non utilisé":"Non utilisée")}
   function fillOutlet(k,o={}){setActive(k,!!o.active);if(k==="fourInch"){$("fourInchPressure").value=o.pressure??"";$("fourInchSector").value=o.sector||"";$("fourInchLocation").value=o.location||"";return}if(k==="deckGun"){$("deckGunPressure").value=o.pressure??"";$("deckGunSector").value=o.sector||"";$("deckGunLocation").value=o.location||"";return}if(Number(k)>2)$(`outlet${k}Type`).value=o.type||"1¾ po";$(`outlet${k}Pressure`).value=o.pressure??"";$(`outlet${k}Sector`).value=o.sector||"";$(`outlet${k}Location`).value=o.location||""}
   function readOutlet(k){if(k==="fourInch")return{active:active(k),pressure:$("fourInchPressure").value,sector:$("fourInchSector").value,location:$("fourInchLocation").value.trim()};if(k==="deckGun")return{active:active(k),pressure:$("deckGunPressure").value,sector:$("deckGunSector").value,location:$("deckGunLocation").value.trim()};return{active:active(k),type:Number(k)<=2?"1¾ po":$(`outlet${k}Type`).value,pressure:$(`outlet${k}Pressure`).value,sector:$(`outlet${k}Sector`).value,location:$(`outlet${k}Location`).value.trim()}}
-  function openForm(item=null){fillVehicleOptions();const u=item?canonical(item):ensureEventLink(canonical({}));$("vehicleUsageId").value=item?u.id:"";$("vehicleUsageVehicle").value=u.vehicleId||vehicles()[0]?.id||"";$("vehicleUsageFirefighters").value=u.firefighters;$("vehicleUsageSupplied").value=u.supplied;$("vehicleUsageResidualStart").value=u.residualStart;$("vehicleUsageResidualEnd").value=u.residualEnd;$("vehicleUsageNotes").value=u.notes;$("vehicleUsageTitle").textContent=item?`Modifier — ${u.vehicleName}`:"Nouvelle fiche véhicule";$("deleteVehicleUsage").classList.toggle("hidden",!item);setStatus(u.status);for(let n=1;n<=6;n++)fillOutlet(String(n),u.outlets[n]);fillOutlet("fourInch",u.special.fourInch);fillOutlet("deckGun",u.special.deckGun);$("vehicleUsageDialog").showModal()}
-  function fromForm(){const id=$("vehicleUsageId").value||uid(),v=vehicles().find(x=>String(x.id)===String($("vehicleUsageVehicle").value))||{},old=usages.find(x=>x.id===id),outlets={};for(let n=1;n<=6;n++)outlets[n]=readOutlet(String(n));return ensureEventLink(canonical({...old,id,vehicleId:String(v.id||""),vehicleName:v.name||"",vehicleNumber:v.number||"",status:$("vehicleUsageStatus").value,firefighters:$("vehicleUsageFirefighters").value,supplied:$("vehicleUsageSupplied").value,outlets,special:{fourInch:readOutlet("fourInch"),deckGun:readOutlet("deckGun")},residualStart:$("vehicleUsageResidualStart").value,residualEnd:$("vehicleUsageResidualEnd").value,notes:$("vehicleUsageNotes").value.trim(),createdAt:old?.createdAt||new Date().toISOString(),updatedAtText:new Date().toLocaleString("fr-CA")}))}
+  function openForm(item=null){
+    const saveStatus=$("vehicleUsageSaveStatus");
+    if(saveStatus){
+      saveStatus.textContent="";
+      saveStatus.className="vehicle-usage-save-status hidden";
+    }
+fillVehicleOptions();const u=item?canonical(item):ensureEventLink(canonical({}));$("vehicleUsageId").value=item?u.id:"";$("vehicleUsageVehicle").value=u.vehicleId||vehicles()[0]?.id||"";$("vehicleUsageFirefighters").value=u.firefighters;$("vehicleUsageSupplied").value=u.supplied;$("vehicleUsageResidualStart").value=u.residualStart;$("vehicleUsageResidualEnd").value=u.residualEnd;$("vehicleUsageNotes").value=u.notes;$("vehicleUsageTitle").textContent=item?`Modifier — ${u.vehicleName}`:"Nouvelle fiche véhicule";$("deleteVehicleUsage").classList.toggle("hidden",!item);setStatus(u.status);for(let n=1;n<=6;n++)fillOutlet(String(n),u.outlets[n]);fillOutlet("fourInch",u.special.fourInch);fillOutlet("deckGun",u.special.deckGun);$("vehicleUsageDialog").showModal()}
+  function fromForm(){
+    const id=$("vehicleUsageId").value||uid();
+    const select=$("vehicleUsageVehicle");
+    const selectedId=String(select?.value||"");
+    const selectedText=String(select?.selectedOptions?.[0]?.textContent||"").trim();
+
+    const knownVehicle=vehicles().find(x=>String(x.id)===selectedId)
+      || vehicles().find(x=>String(x.number||"")===selectedId)
+      || vehicles().find(x=>String(x.name||"").trim()===selectedText)
+      || null;
+
+    const old=usages.find(x=>String(x.id)===String(id));
+    const outlets={};
+    for(let n=1;n<=6;n++)outlets[n]=readOutlet(String(n));
+
+    const fallbackNumber=(selectedText.match(/\b(\d{2,4})\b/)||[])[1]||"";
+
+    return ensureEventLink(canonical({
+      ...old,
+      id,
+      vehicleId:String(knownVehicle?.id||selectedId),
+      vehicleName:String(knownVehicle?.name||selectedText||"Véhicule"),
+      vehicleNumber:String(knownVehicle?.number||fallbackNumber),
+      status:$("vehicleUsageStatus").value,
+      firefighters:$("vehicleUsageFirefighters").value,
+      supplied:$("vehicleUsageSupplied").value,
+      outlets,
+      special:{
+        fourInch:readOutlet("fourInch"),
+        deckGun:readOutlet("deckGun")
+      },
+      residualStart:$("vehicleUsageResidualStart").value,
+      residualEnd:$("vehicleUsageResidualEnd").value,
+      notes:$("vehicleUsageNotes").value.trim(),
+      createdAt:old?.createdAt||new Date().toISOString(),
+      updatedAt:new Date().toISOString(),
+      updatedAtText:new Date().toLocaleString("fr-CA")
+    }));
+  }
+
+  function setSaveStatus(message,type="info"){
+    const box=$("vehicleUsageSaveStatus");
+    if(!box)return;
+    box.textContent=message;
+    box.className=`vehicle-usage-save-status ${type}`;
+  }
+
+  function verifyLocalSave(id){
+    try{
+      const rows=JSON.parse(localStorage.getItem(CACHE)||"[]");
+      return Array.isArray(rows)&&rows.some(x=>String(x.id)===String(id));
+    }catch(_){
+      return false;
+    }
+  }
+
   async function save(e){
     e?.preventDefault?.();
+    e?.stopPropagation?.();
+
+    const button=$("saveVehicleUsageButton");
+    if(button?.dataset.saving==="true")return;
+
+    if(button){
+      button.dataset.saving="true";
+      button.disabled=true;
+      button.textContent="Enregistrement…";
+    }
+    setSaveStatus("Enregistrement en cours…","info");
 
     try{
-      const selectedVehicleId=String($("vehicleUsageVehicle")?.value||"");
-      if(!selectedVehicleId){
-        core.toast("Sélectionnez un véhicule.");
-        return;
-      }
+      const select=$("vehicleUsageVehicle");
+      if(!select?.value)throw new Error("Aucun véhicule sélectionné.");
+
+      let localRows=[];
+      try{
+        const parsed=JSON.parse(localStorage.getItem(CACHE)||"[]");
+        localRows=Array.isArray(parsed)?parsed:[];
+      }catch(_){}
+
+      const merged=new Map();
+      [...localRows,...usages].forEach(row=>{
+        const item=canonical(row);
+        merged.set(String(item.id),item);
+      });
+      usages=[...merged.values()];
 
       const u=fromForm();
-      if(!u.vehicleId){
-        core.toast("Le véhicule n’a pas été reconnu.");
-        return;
-      }
+      if(!u.vehicleId)throw new Error("Le véhicule sélectionné n’a pas d’identifiant.");
 
       const i=usages.findIndex(x=>String(x.id)===String(u.id));
       if(i>=0)usages[i]=u;
       else usages.push(u);
 
-      // Sauvegarde locale obligatoire avant toute tentative Firebase.
-      persist();
+      localStorage.setItem(CACHE,JSON.stringify(usages));
       queue(u);
 
-      // Rafraîchir immédiatement les profils d’unités.
+      if(!verifyLocalSave(u.id)){
+        throw new Error("La fiche n’a pas pu être vérifiée dans le téléphone.");
+      }
+
       render();
       window.dispatchEvent(new CustomEvent("firemap:vehicle-usages-ready"));
       window.dispatchEvent(new CustomEvent("firemap:vehicle-usage-updated",{
@@ -71,10 +152,11 @@
       }));
       window.fireMapVehicles?.refreshProfiles?.();
 
-      $("vehicleUsageDialog")?.close();
+      setSaveStatus("✅ Fiche enregistrée sur le téléphone.","success");
       core.toast("Fiche véhicule enregistrée.");
 
-      // La synchronisation Firebase ne doit jamais annuler la sauvegarde locale.
+      setTimeout(()=>$("vehicleUsageDialog")?.close(),500);
+
       const cloud=window.fireMapCloud;
       if(cloud?.configured&&typeof cloud.saveVehicleUsage==="function"){
         try{
@@ -82,12 +164,20 @@
           clearPending(u.id);
           core.toast("Fiche véhicule synchronisée.");
         }catch(err){
-          console.warn("Synchronisation de la fiche véhicule en attente.",err);
+          console.warn("Synchronisation Firebase en attente.",err);
+          setSaveStatus("✅ Enregistrée localement — synchronisation en attente.","warning");
         }
       }
     }catch(err){
       console.error("Erreur d’enregistrement de la fiche véhicule.",err);
-      core.toast("Erreur pendant l’enregistrement de la fiche.");
+      setSaveStatus(`❌ ${err?.message||"Erreur pendant l’enregistrement."}`,"error");
+      core.toast(err?.message||"Erreur pendant l’enregistrement.");
+    }finally{
+      if(button){
+        button.dataset.saving="false";
+        button.disabled=false;
+        button.textContent="Enregistrer la fiche";
+      }
     }
   }
 
@@ -103,7 +193,7 @@
   if($("cancelVehicleUsageDialog")) $("cancelVehicleUsageDialog").onclick=()=>$("vehicleUsageDialog").close();
   if($("deleteVehicleUsage")) $("deleteVehicleUsage").onclick=remove;
   if($("vehicleUsageForm")) $("vehicleUsageForm").addEventListener("submit",save);
-  if($("saveVehicleUsageButton")) $("saveVehicleUsageButton").addEventListener("click",save);
+  if($("saveVehicleUsageButton")) $("saveVehicleUsageButton").onclick=save;
   function latestForVehicle(vehicleId){
     const event=activeCommandEvent();
     const matching=[...usages].filter(u=>String(u.vehicleId)===String(vehicleId));

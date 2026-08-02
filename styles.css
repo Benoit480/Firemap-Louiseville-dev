@@ -935,3 +935,36 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
     grid-template-columns:1fr 1fr;
   }
 }
+
+
+/* FireMap V21.0.8 — confirmation fiable de sauvegarde */
+.vehicle-usage-save-status{
+  margin:12px 14px 0;
+  padding:11px 13px;
+  border-radius:11px;
+  border:1px solid #334155;
+  background:#0b1220;
+  color:#e5e7eb;
+  font-weight:850;
+  text-align:center;
+}
+.vehicle-usage-save-status.success{
+  border-color:#22c55e;
+  background:#062015;
+  color:#bbf7d0;
+}
+.vehicle-usage-save-status.warning{
+  border-color:#eab308;
+  background:#251a02;
+  color:#fef08a;
+}
+.vehicle-usage-save-status.error{
+  border-color:#ef4444;
+  background:#260b0f;
+  color:#fecaca;
+}
+.vehicle-usage-save-status.info{
+  border-color:#3b82f6;
+  background:#071426;
+  color:#bfdbfe;
+}
