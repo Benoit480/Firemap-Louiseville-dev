@@ -171,10 +171,36 @@
           <article><strong id="commandFirefighterCount">0</strong><span>👨‍🚒 Pompiers</span></article>
           <article><strong id="commandOutletCount">0</strong><span>💧 Sorties actives</span></article>
         </div>
-        <div class="command-tabs"><button class="active" data-command-tab="vehicles">Véhicules</button><button data-command-tab="outlets">Sorties</button><button data-command-tab="journal">Journal</button><button data-command-tab="event">Événement</button></div>
+        <div class="command-tabs"><button class="active" data-command-tab="vehicles">Véhicules</button><button data-command-tab="outlets">Sorties</button><button data-command-tab="prevention">Prévention</button><button data-command-tab="journal">Journal</button><button data-command-tab="event">Événement</button></div>
         <div id="commandPanelVehicles" class="command-panel"><div id="commandVehicleList" class="command-vehicle-grid"></div></div>
         <div id="commandPanelOutlets" class="command-panel hidden"><div id="commandOutletList" class="command-outlet-list"></div></div>
-        <div id="commandPanelJournal" class="command-panel hidden"><div class="command-journal-add"><input id="commandJournalText" placeholder="Ajouter une note…"><button id="commandJournalAdd" class="primary">Ajouter</button></div><div id="commandJournalList"></div></div>
+        <div id="commandPanelPrevention" class="command-panel hidden">
+          <div id="commandPreventionEmpty" class="card-item">
+            <strong>Aucune fiche de prévention liée</strong>
+            <p>La recherche se fait automatiquement avec l’adresse de l’événement actif.</p>
+          </div>
+          <div id="commandPreventionContent" class="hidden">
+            <div class="command-prevention-head">
+              <div><small>FICHE DE PRÉVENTION</small><h2 id="commandPreventionTitle">Bâtiment</h2><p id="commandPreventionAddress">—</p></div>
+              <div class="command-prevention-actions">
+                <button id="commandOpenPrevention" class="primary">Ouvrir la fiche</button>
+                <button id="commandShowPreventionMap" class="secondary">Voir sur la carte</button>
+              </div>
+            </div>
+            <div class="command-prevention-grid">
+              <article class="critical"><span>⚠️</span><strong>Risques</strong><p id="commandPreventionRisks">Aucun risque inscrit</p></article>
+              <article><span>🚒</span><strong>FDC</strong><p id="commandPreventionFdc">Non inscrit</p></article>
+              <article><span>⚡</span><strong>Électricité</strong><p id="commandPreventionElectrical">Non inscrit</p></article>
+              <article><span>🔥</span><strong>Gaz</strong><p id="commandPreventionGas">Non inscrit</p></article>
+              <article><span>☣️</span><strong>Matières dangereuses</strong><p id="commandPreventionHazmat">Non inscrit</p></article>
+              <article><span>🚪</span><strong>Accès pompier</strong><p id="commandPreventionAccess">Non inscrit</p></article>
+            </div>
+            <section class="command-prevention-photos">
+              <h3>📸 Photos opérationnelles</h3>
+              <div id="commandPreventionPhotos" class="command-prevention-photo-grid"></div>
+            </section>
+          </div>
+        </div><div id="commandPanelJournal" class="command-panel hidden"><div class="command-journal-add"><input id="commandJournalText" placeholder="Ajouter une note…"><button id="commandJournalAdd" class="primary">Ajouter</button></div><div id="commandJournalList"></div></div>
         <div id="commandPanelEvent" class="command-panel hidden"><div class="card-item"><p id="commandEventMeta"></p><button id="editCommandEvent" class="secondary">Modifier</button> <button id="endCommandEvent" class="danger">Terminer l’événement</button></div></div>
       </div>
     </section>

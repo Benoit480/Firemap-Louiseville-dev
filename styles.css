@@ -814,3 +814,18 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
   color:#fca5a5!important;
   font-weight:800;
 }
+
+
+/* FireMap V21.0.3 — Prévention dans le poste de commandement */
+.command-prevention-head{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;padding:15px;margin-bottom:12px;border:1px solid #334155;border-radius:16px;background:#080d15}
+.command-prevention-head h2{margin:3px 0}.command-prevention-head p{margin:0;color:#cbd5e1}
+.command-prevention-actions{display:flex;gap:8px;flex-wrap:wrap}
+.command-prevention-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.command-prevention-grid article{padding:14px;border:1px solid #334155;border-radius:14px;background:#080d15}
+.command-prevention-grid article.critical{border-color:#ef4444;background:#260b0f}
+.command-prevention-grid span{font-size:24px}.command-prevention-grid strong{display:block;margin:6px 0}
+.command-prevention-grid p{margin:0;color:#cbd5e1;white-space:pre-wrap}
+.command-prevention-photos{margin-top:14px}.command-prevention-photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.command-prevention-photo-grid a{display:block;overflow:hidden;border:1px solid #334155;border-radius:12px;background:#05080e}
+.command-prevention-photo-grid img{display:block;width:100%;height:140px;object-fit:cover}
+@media(max-width:760px){.command-prevention-head{grid-template-columns:1fr}.command-prevention-actions button{flex:1}.command-prevention-grid{grid-template-columns:1fr}.command-prevention-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
