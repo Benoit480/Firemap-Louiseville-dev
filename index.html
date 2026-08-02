@@ -392,7 +392,7 @@
 
 
   <dialog id="vehicleUsageDialog" class="vehicle-dialog vehicle-usage-dialog">
-    <form id="vehicleUsageForm" method="dialog">
+    <form id="vehicleUsageForm" novalidate>
       <div class="modal-head">
         <div><small>UTILISATION EN INTERVENTION</small><h2 id="vehicleUsageTitle">Fiche véhicule</h2></div>
         <button type="button" id="closeVehicleUsageDialog">×</button>
@@ -514,7 +514,7 @@
         <button type="button" id="deleteVehicleUsage" class="danger hidden">Supprimer</button>
         <span></span>
         <button type="button" id="cancelVehicleUsageDialog" class="secondary">Annuler</button>
-        <button type="submit" class="primary">Enregistrer la fiche</button>
+        <button type="button" id="saveVehicleUsageButton" class="primary">Enregistrer la fiche</button>
       </div>
     </form>
   </dialog>
