@@ -31,6 +31,29 @@
   function canonical(r={}){
     return {id:String(r.id||r.buildingId||uid()),buildingId:String(r.buildingId||r.id||""),inspector:String(r.inspector||""),visitDate:String(r.visitDate||""),nextReview:String(r.nextReview||""),occupancy:Number(r.occupancy||0),accessCode:String(r.accessCode||""),checks:{...(r.checks||{})},risks:{...(r.risks||{})},electricalNotes:String(r.electricalNotes||""),gasNotes:String(r.gasNotes||""),fdcNotes:String(r.fdcNotes||""),accessNotes:String(r.accessNotes||""),hazmatNotes:String(r.hazmatNotes||""),photoUrls:Array.isArray(r.photoUrls)?r.photoUrls:String(r.photoUrls||"").split(/\n+/).map(x=>x.trim()).filter(Boolean),photosByCategory:Object.fromEntries(Object.entries(r.photosByCategory||{}).map(([k,v])=>[k,Array.isArray(v)?v:[]])),observations:String(r.observations||""),visits:Array.isArray(r.visits)?r.visits.slice(0,20):[]};
   }
+
+  function photoIdentity(photo={}){
+    return String(photo.path || photo.url || photo.name || "");
+  }
+
+  function mergePhotoMaps(...maps){
+    const result={};
+    for(const map of maps){
+      for(const [category,list] of Object.entries(map||{})){
+        if(!Array.isArray(list))continue;
+        if(!result[category])result[category]=[];
+        const seen=new Set(result[category].map(photoIdentity));
+        for(const photo of list){
+          const key=photoIdentity(photo);
+          if(!key || seen.has(key))continue;
+          result[category].push(photo);
+          seen.add(key);
+        }
+      }
+    }
+    return result;
+  }
+
   function persist(){write(CACHE,[...records.values()])}
   function pending(){return read(PENDING,{})}
   function queue(r){const p=pending();p[r.id]=r;write(PENDING,p)}
@@ -71,7 +94,9 @@
     $("preventionDialogTitle").textContent=b.name;$("preventionBuildingId").value=b.id;$("preventionInspector").value=r.inspector;$("preventionVisitDate").value=r.visitDate||today();$("preventionNextReview").value=r.nextReview;$("preventionOccupancy").value=r.occupancy||"";$("preventionAccessCode").value=r.accessCode;
     const checks={pvElectricalPanel:"electricalPanel",pvElectricalEntrance:"electricalEntrance",pvGasEntrance:"gasEntrance",pvWaterValve:"waterValve",pvFdcAccessible:"fdcAccessible",pvSprinklers:"sprinklers",pvGenerator:"generator",pvElevator:"elevator",pvDryStandpipe:"dryStandpipe"};Object.entries(checks).forEach(([id,k])=>setCheck(id,r.checks[k]));
     const risks={prHazmat:"hazmat",prChemicals:"chemicals",prPropane:"propane",prOxygen:"oxygen",prLithium:"lithium",prSolar:"solar",prFuel:"fuel"};Object.entries(risks).forEach(([id,k])=>setCheck(id,r.risks[k]));
-    draftPhotos=structuredClone?r.photosByCategory?structuredClone(r.photosByCategory):{}:JSON.parse(JSON.stringify(r.photosByCategory||{}));
+    draftPhotos=structuredClone
+      ? structuredClone(mergePhotoMaps(r.photosByCategory,draftPhotos))
+      : JSON.parse(JSON.stringify(mergePhotoMaps(r.photosByCategory,draftPhotos)));
     $("pvElectricalNotes").value=r.electricalNotes;$("pvGasNotes").value=r.gasNotes;$("pvFdcNotes").value=r.fdcNotes;$("pvAccessNotes").value=r.accessNotes;$("pvHazmatNotes").value=r.hazmatNotes;$("pvPhotoUrls").value=r.photoUrls.join("\n");$("pvObservations").value=r.observations;
     $("preventionVisitHistory").innerHTML=r.visits.length?r.visits.map(v=>`<div class="visit-item"><strong>${esc(v.date||"")}</strong><span>${esc(v.inspector||"Inspecteur non inscrit")}</span><p>${esc(v.observations||"Aucune observation")}</p></div>`).join(""):'<p class="muted">Aucune visite enregistrée.</p>';
     document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.remove("form-section-collapsed"));
@@ -83,12 +108,60 @@
     const risks={hazmat:$("prHazmat").checked,chemicals:$("prChemicals").checked,propane:$("prPropane").checked,oxygen:$("prOxygen").checked,lithium:$("prLithium").checked,solar:$("prSolar").checked,fuel:$("prFuel").checked};
     const entry={id:uid(),date:visitDate,inspector:$("preventionInspector").value.trim(),observations:$("pvObservations").value.trim(),savedAt:new Date().toISOString()};
     const same=old.visits[0]&&old.visits[0].date===entry.date&&old.visits[0].inspector===entry.inspector&&old.visits[0].observations===entry.observations;
-    return canonical({...old,id,buildingId:id,inspector:entry.inspector,visitDate,nextReview:$("preventionNextReview").value,occupancy:Number($("preventionOccupancy").value||0),accessCode:$("preventionAccessCode").value.trim(),checks,risks,electricalNotes:$("pvElectricalNotes").value.trim(),gasNotes:$("pvGasNotes").value.trim(),fdcNotes:$("pvFdcNotes").value.trim(),accessNotes:$("pvAccessNotes").value.trim(),hazmatNotes:$("pvHazmatNotes").value.trim(),photoUrls:$("pvPhotoUrls").value,photosByCategory:JSON.parse(JSON.stringify(draftPhotos||{})),observations:entry.observations,visits:same?old.visits:[entry,...old.visits].slice(0,20)});
+    const mergedPhotos=mergePhotoMaps(old.photosByCategory,draftPhotos);
+    draftPhotos=JSON.parse(JSON.stringify(mergedPhotos));
+    return canonical({...old,id,buildingId:id,inspector:entry.inspector,visitDate,nextReview:$("preventionNextReview").value,occupancy:Number($("preventionOccupancy").value||0),accessCode:$("preventionAccessCode").value.trim(),checks,risks,electricalNotes:$("pvElectricalNotes").value.trim(),gasNotes:$("pvGasNotes").value.trim(),fdcNotes:$("pvFdcNotes").value.trim(),accessNotes:$("pvAccessNotes").value.trim(),hazmatNotes:$("pvHazmatNotes").value.trim(),photoUrls:$("pvPhotoUrls").value,photosByCategory:mergedPhotos,observations:entry.observations,visits:same?old.visits:[entry,...old.visits].slice(0,20)});
   }
   function updateLiveScore(){const id=$("preventionBuildingId").value;if(!id)return;const b=buildings().find(x=>String(x.id)===String(id));const r=formRecord();const s=score(r,b);$("preventionScoreValue").textContent=s+" %";$("preventionScoreBar").style.width=s+"%";$("preventionScoreBar").className=scoreState(s);$("preventionScoreLabel").textContent=scoreLabel(s)}
   async function save(e){e.preventDefault();if(!preventionEditMode){I.toast("Appuyez sur Modifier pour changer la fiche.");return;}if(forceReadOnlyFromOperationalView){I.toast("Vue intervention : fiche en lecture seule.");return;}const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
   async function flush(){const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)return;for(const [id,r] of Object.entries(pending()))try{await c.savePrevention(r);clearPending(id)}catch(e){console.error(e)}}
-  function connect(){const c=window.fireMapCloud;if(!c?.configured||!c.subscribePrevention){render();return}if(cloudUnsub)cloudUnsub();cloudUnsub=c.subscribePrevention(items=>{const p=pending();records=new Map(items.map(x=>{const r=canonical(x);return[r.id,r]}));Object.values(p).forEach(x=>{const r=canonical(x);records.set(r.id,r)});persist();render();flush()},e=>{console.error(e);I.toast("Prévention en mode local.")});flush()}
+  function connect(){
+    const c=window.fireMapCloud;
+    if(!c?.configured||!c.subscribePrevention){render();return}
+    if(cloudUnsub)cloudUnsub();
+    cloudUnsub=c.subscribePrevention(items=>{
+      const p=pending();
+      const localBefore=new Map(records);
+      const next=new Map();
+
+      items.forEach(item=>{
+        const cloudRecord=canonical(item);
+        const localRecord=localBefore.get(cloudRecord.id);
+        if(localRecord){
+          cloudRecord.photosByCategory=mergePhotoMaps(
+            cloudRecord.photosByCategory,
+            localRecord.photosByCategory
+          );
+        }
+        next.set(cloudRecord.id,cloudRecord);
+      });
+
+      localBefore.forEach((localRecord,id)=>{
+        if(!next.has(id))next.set(id,localRecord);
+      });
+
+      Object.values(p).forEach(item=>{
+        const pendingRecord=canonical(item);
+        const current=next.get(pendingRecord.id);
+        if(current){
+          pendingRecord.photosByCategory=mergePhotoMaps(
+            current.photosByCategory,
+            pendingRecord.photosByCategory
+          );
+        }
+        next.set(pendingRecord.id,pendingRecord);
+      });
+
+      records=next;
+      persist();
+      render();
+      flush();
+    },e=>{
+      console.error(e);
+      I.toast("Prévention en mode local.");
+    });
+    flush();
+  }
   function preplanHtml(id){
     const b=buildings().find(x=>String(x.id)===String(id)),r=records.get(String(id));
     if(!r)return '<section class="preplan-section prevention-summary"><h3>🛡️ Préplan de prévention</h3><p>Aucune visite de prévention enregistrée.</p></section>';
@@ -142,8 +215,18 @@
         renderPhotoGallery(category);renderCategoryGallery?.(category);updateLiveScore();
       }catch(err){console.error(err);I.toast(err.message||"Impossible d’enregistrer la photo.")}
     }
-    const current=formRecord();records.set(current.id,current);persist();queue(current);
-    I.toast("Photo ajoutée et affichée sous la catégorie.");
+    const current=formRecord();
+    records.set(current.id,current);
+    persist();
+    queue(current);
+    try{
+      if(window.fireMapCloud?.configured&&window.fireMapCloud.savePrevention){
+        await window.fireMapCloud.savePrevention(current);
+      }
+    }catch(err){
+      console.warn("Photo enregistrée localement, synchronisation en attente.",err);
+    }
+    I.toast("Photo ajoutée et enregistrée sous la catégorie.");
   }
   async function deleteCategoryPhoto(category,index){
     const photos=draftPhotos[category]||[],photo=photos[index];if(!photo)return;
