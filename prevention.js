@@ -137,10 +137,13 @@
     for(const original of files){
       try{
         if(original.size>15*1024*1024)throw new Error("Photo trop volumineuse (maximum 15 Mo).");
-        const file=await compressImage(original);const uploaded=await cloud.uploadPreventionPhoto(buildingId,category,file);draftPhotos[category].push(uploaded);renderPhotoGallery(category);updateLiveScore();
+        const file=await compressImage(original);const uploaded=await cloud.uploadPreventionPhoto(buildingId,category,file);draftPhotos[category].push(uploaded);
+        const current=mutableCurrentRecord?.();if(current){current.photosByCategory=JSON.parse(JSON.stringify(draftPhotos));records.set(String(current.id),current);persist();}
+        renderPhotoGallery(category);renderCategoryGallery?.(category);updateLiveScore();
       }catch(err){console.error(err);I.toast(err.message||"Impossible d’enregistrer la photo.")}
     }
-    I.toast("Photo ajoutée. Enregistrez la visite pour confirmer.");
+    const current=formRecord();records.set(current.id,current);persist();queue(current);
+    I.toast("Photo ajoutée et affichée sous la catégorie.");
   }
   async function deleteCategoryPhoto(category,index){
     const photos=draftPhotos[category]||[],photo=photos[index];if(!photo)return;
@@ -190,11 +193,12 @@
   let activePhotoCategory = "";
 
   function photoCategoryFromInput(input){
-    return input?.dataset?.photoCategory || input?.name || input?.id || "";
+    if(!input)return "";
+    return input.dataset?.photoCategory || photoCategories[input.id]?.key || input.name || input.id || "";
   }
 
   function categoryLabel(category){
-    const match=(photoCategories||[]).find?.(x=>x.key===category);
+    const match=Object.values(photoCategories||{}).find(x=>x.key===category);
     return match?.label || category;
   }
 
@@ -248,8 +252,7 @@
   function renderCategoryGallery(category){
     const gallery=document.querySelector(`[data-photo-gallery="${CSS.escape(category)}"]`);
     if(!gallery) return;
-    const r=mutableCurrentRecord();
-    const list=r?.photosByCategory?.[category]||[];
+    const list=Array.isArray(draftPhotos?.[category])?draftPhotos[category]:[];
     gallery.innerHTML=list.map((photo,index)=>`
       <figure class="category-photo-thumb">
         <a href="${esc(photo.url)}" target="_blank" rel="noopener">
@@ -263,35 +266,11 @@
     document.querySelectorAll("[data-photo-gallery]").forEach(g=>renderCategoryGallery(g.dataset.photoGallery));
   }
 
-  function fileToDataUrl(file){
-    return new Promise((resolve,reject)=>{
-      const reader=new FileReader();
-      reader.onload=()=>resolve(reader.result);
-      reader.onerror=reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
   async function addCategoryFiles(fileList){
-    if(!activePhotoCategory || !fileList?.length) return;
-    const r=mutableCurrentRecord();
-    if(!r) return;
-    r.photosByCategory[activePhotoCategory]=r.photosByCategory[activePhotoCategory]||[];
-    for(const file of fileList){
-      if(!file.type.startsWith("image/")) continue;
-      const url=await fileToDataUrl(file);
-      r.photosByCategory[activePhotoCategory].push({
-        url,
-        name:file.name||`${activePhotoCategory}-${Date.now()}.jpg`,
-        createdAt:new Date().toISOString(),
-        local:true
-      });
-    }
-    records.set(String(r.id),r);
-    persist();
+    if(!activePhotoCategory || !fileList?.length)return;
+    await uploadCategoryPhotos(activePhotoCategory,[...fileList]);
     renderCategoryGallery(activePhotoCategory);
-    updateLiveScore();
-    I.toast("Photo ajoutée.");
+    renderPhotoGallery(activePhotoCategory);
   }
 
   document.addEventListener("click",e=>{
@@ -311,16 +290,14 @@
     }
     const del=e.target.closest("[data-photo-delete]");
     if(del){
-      const r=mutableCurrentRecord();
-      if(!r) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
       const category=del.dataset.photoDelete;
       const index=Number(del.dataset.photoIndex);
-      r.photosByCategory?.[category]?.splice(index,1);
-      records.set(String(r.id),r);
-      persist();
-      renderCategoryGallery(category);
-      updateLiveScore();
-      I.toast("Photo supprimée.");
+      deleteCategoryPhoto(category,index).then(()=>{
+        renderCategoryGallery(category);
+        renderPhotoGallery(category);
+      });
     }
   });
 
