@@ -32,8 +32,12 @@
     return {id:String(r.id||r.buildingId||uid()),buildingId:String(r.buildingId||r.id||""),inspector:String(r.inspector||""),visitDate:String(r.visitDate||""),nextReview:String(r.nextReview||""),occupancy:Number(r.occupancy||0),accessCode:String(r.accessCode||""),checks:{...(r.checks||{})},risks:{...(r.risks||{})},electricalNotes:String(r.electricalNotes||""),gasNotes:String(r.gasNotes||""),fdcNotes:String(r.fdcNotes||""),accessNotes:String(r.accessNotes||""),hazmatNotes:String(r.hazmatNotes||""),photoUrls:Array.isArray(r.photoUrls)?r.photoUrls:String(r.photoUrls||"").split(/\n+/).map(x=>x.trim()).filter(Boolean),photosByCategory:Object.fromEntries(Object.entries(r.photosByCategory||{}).map(([k,v])=>[k,Array.isArray(v)?v:[]])),observations:String(r.observations||""),visits:Array.isArray(r.visits)?r.visits.slice(0,20):[]};
   }
 
+  function photoUrl(photo={}){
+    return String(photo.url || photo.downloadURL || photo.downloadUrl || photo.src || "");
+  }
+
   function photoIdentity(photo={}){
-    return String(photo.path || photo.url || photo.name || "");
+    return String(photo.path || photoUrl(photo) || photo.name || "");
   }
 
   function mergePhotoMaps(...maps){
@@ -100,7 +104,13 @@
     $("pvElectricalNotes").value=r.electricalNotes;$("pvGasNotes").value=r.gasNotes;$("pvFdcNotes").value=r.fdcNotes;$("pvAccessNotes").value=r.accessNotes;$("pvHazmatNotes").value=r.hazmatNotes;$("pvPhotoUrls").value=r.photoUrls.join("\n");$("pvObservations").value=r.observations;
     $("preventionVisitHistory").innerHTML=r.visits.length?r.visits.map(v=>`<div class="visit-item"><strong>${esc(v.date||"")}</strong><span>${esc(v.inspector||"Inspecteur non inscrit")}</span><p>${esc(v.observations||"Aucune observation")}</p></div>`).join(""):'<p class="muted">Aucune visite enregistrée.</p>';
     document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.remove("form-section-collapsed"));
-    decoratePhotoRows();renderAllPhotoGalleries();renderAllCategoryGalleries();updateLiveScore();$("preventionDialog").showModal();setTimeout(()=>{refreshPreventionLock();setDefaultReadOnly(true)},0);
+    decoratePhotoRows();
+    renderAllPhotoGalleries();
+    renderAllCategoryGalleries();
+    updateLiveScore();
+    $("preventionDialog").showModal();
+    requestAnimationFrame(()=>renderAllCategoryGalleries());
+    setTimeout(()=>{renderAllCategoryGalleries();refreshPreventionLock();setDefaultReadOnly(true)},100);
   }
   function formRecord(){
     const id=$("preventionBuildingId").value,old=recordFor(id),visitDate=$("preventionVisitDate").value||today();
@@ -187,9 +197,7 @@
     return `<section class="preplan-section prevention-summary preplan-from-prevention"><div class="preplan-prevention-title"><h3>🚨 Fiche opérationnelle du bâtiment</h3><span class="score-badge ${scoreState(sc)}">${sc}%</span></div><div class="score-track"><span class="${scoreState(sc)}" style="width:${sc}%"></span></div><p><strong>Dernière visite :</strong> ${esc(r.visitDate||"Non inscrite")} ${r.inspector?`— ${esc(r.inspector)}`:""}</p>${r.nextReview?`<p><strong>Prochaine révision :</strong> ${esc(r.nextReview)}</p>`:""}${r.occupancy?`<p><strong>Occupation maximale :</strong> ${esc(String(r.occupancy))}</p>`:""}${r.accessCode?`<p><strong>Code d’accès :</strong> ${esc(r.accessCode)}</p>`:""}</section><section class="preplan-section"><h3>✅ Éléments opérationnels vérifiés</h3><ul class="preplan-check-list">${checked||"<li>Aucun élément confirmé.</li>"}</ul>${unchecked?`<details><summary>Éléments non confirmés</summary><ul class="preplan-check-list">${unchecked}</ul></details>`:""}</section>${risksHtml}${r.electricalNotes?`<section class="preplan-section"><h3>⚡ Électricité</h3><p>${esc(r.electricalNotes)}</p></section>`:""}${r.gasNotes?`<section class="preplan-section"><h3>🔥 Gaz / propane</h3><p>${esc(r.gasNotes)}</p></section>`:""}${r.fdcNotes?`<section class="preplan-section"><h3>🚒 FDC</h3><p>${esc(r.fdcNotes)}</p></section>`:""}${r.accessNotes?`<section class="preplan-section"><h3>🚪 Accès</h3><p>${esc(r.accessNotes)}</p></section>`:""}${r.observations?`<section class="preplan-section"><h3>📝 Observations de prévention</h3><p>${esc(r.observations).replace(/\n/g,"<br>")}</p></section>`:""}${photos?`<section class="preplan-section"><h3>📷 Photos opérationnelles</h3><div class="preplan-photo-grid">${photos}</div></section>`:""}`;
   }
   function renderPhotoGallery(category){
-    const target=document.querySelector(`[data-photo-gallery="${category}"]`);if(!target)return;
-    const photos=Array.isArray(draftPhotos[category])?draftPhotos[category]:[];
-    target.innerHTML=photos.map((p,i)=>`<figure class="category-photo-thumb"><a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="Photo"></a><button type="button" data-photo-delete="${category}" data-photo-index="${i}" aria-label="Supprimer">×</button></figure>`).join("")+(photos.length?`<small>${photos.length} photo${photos.length>1?"s":""}</small>`:'<small>Aucune photo</small>');
+    renderCategoryGallery(category);
   }
   function renderAllPhotoGalleries(){Object.values(photoCategories).forEach(meta=>renderPhotoGallery(meta.key))}
   async function compressImage(file){
@@ -210,7 +218,10 @@
     for(const original of files){
       try{
         if(original.size>15*1024*1024)throw new Error("Photo trop volumineuse (maximum 15 Mo).");
-        const file=await compressImage(original);const uploaded=await cloud.uploadPreventionPhoto(buildingId,category,file);draftPhotos[category].push(uploaded);
+        const file=await compressImage(original);
+        const uploaded=await cloud.uploadPreventionPhoto(buildingId,category,file);
+        const normalized={...uploaded,url:photoUrl(uploaded)};
+        draftPhotos[category].push(normalized);
         const current=mutableCurrentRecord?.();if(current){current.photosByCategory=JSON.parse(JSON.stringify(draftPhotos));records.set(String(current.id),current);persist();}
         renderPhotoGallery(category);renderCategoryGallery?.(category);updateLiveScore();
       }catch(err){console.error(err);I.toast(err.message||"Impossible d’enregistrer la photo.")}
@@ -333,16 +344,26 @@
   }
 
   function renderCategoryGallery(category){
-    const gallery=document.querySelector(`[data-photo-gallery="${CSS.escape(category)}"]`);
-    if(!gallery) return;
+    const galleries=[...document.querySelectorAll("[data-photo-gallery]")]
+      .filter(g=>g.dataset.photoGallery===category);
+    if(!galleries.length)return;
+
     const list=Array.isArray(draftPhotos?.[category])?draftPhotos[category]:[];
-    gallery.innerHTML=list.map((photo,index)=>`
-      <figure class="category-photo-thumb">
-        <a href="${esc(photo.url)}" target="_blank" rel="noopener">
-          <img src="${esc(photo.url)}" alt="${esc(categoryLabel(category))}" loading="lazy">
+    const html=list.map((photo,index)=>{
+      const url=photoUrl(photo);
+      if(!url)return "";
+      return `<figure class="category-photo-thumb">
+        <a href="${esc(url)}" target="_blank" rel="noopener">
+          <img src="${esc(url)}" alt="${esc(categoryLabel(category))}" loading="eager">
         </a>
         <button type="button" data-photo-delete="${category}" data-photo-index="${index}" aria-label="Supprimer">×</button>
-      </figure>`).join("");
+      </figure>`;
+    }).join("") + (list.length?`<small class="category-photo-count">${list.length} photo${list.length>1?"s":""}</small>`:"");
+
+    galleries.forEach(gallery=>{
+      gallery.innerHTML=html;
+      gallery.classList.toggle("has-photos",list.length>0);
+    });
   }
 
   function renderAllCategoryGalleries(){

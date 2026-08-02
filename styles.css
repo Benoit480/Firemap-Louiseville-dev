@@ -683,3 +683,25 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
     grid-column:1/-1!important;
   }
 }
+
+
+/* FireMap V20.2.10 — affichage fiable des photos */
+.category-photo-gallery.has-photos{
+  margin-top:8px;
+  padding:8px;
+  border:1px solid #334155;
+  border-radius:12px;
+  background:#05080e;
+}
+.category-photo-count{
+  grid-column:1/-1;
+  color:#94a3b8;
+  font-weight:700;
+}
+.category-photo-thumb img{
+  display:block!important;
+  width:100%!important;
+  min-height:110px;
+  object-fit:cover!important;
+  background:#111827;
+}
