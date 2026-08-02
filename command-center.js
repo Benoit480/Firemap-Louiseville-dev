@@ -1,14 +1,34 @@
-(()=>{"use strict";const $=id=>document.getElementById(id),I=window.fireMapInternal;if(!I)return;const EC="firemap-command-events-v1",AC="firemap-command-active-v1",UC="firemap-vehicle-usages-v2";let events=[],activeId=localStorage.getItem(AC)||"",timer;const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))||f}catch(_){return f}},write=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),uid=()=>crypto.randomUUID?crypto.randomUUID():`e-${Date.now()}`,esc=v=>I.esc?I.esc(v):String(v??"");function active(){return events.find(e=>e.id===activeId&&e.status!=="closed")||null}function saveLocal(){write(EC,events)}function usageList(){return read(UC,[])}function newestByVehicle(){const m=new Map();[...usageList()].sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||""))).forEach(u=>{if(!m.has(String(u.vehicleId)))m.set(String(u.vehicleId),u)});return m}function outletRows(u){const a=[];Object.entries(u?.outlets||{}).forEach(([k,o])=>{if(o?.active)a.push({vehicle:u.vehicleName,name:Number(k)<=2?`Préconnect ${k}`:`Sortie ${k}`,type:o.type,psi:o.pressure,sector:o.sector,location:o.location})});if(u?.special?.fourInch?.active)a.push({vehicle:u.vehicleName,name:"Sortie 4 po",type:"4 po",psi:u.special.fourInch.pressure,sector:u.special.fourInch.sector,location:u.special.fourInch.location});if(u?.special?.deckGun?.active)a.push({vehicle:u.vehicleName,name:"Canon",type:"Canon",psi:u.special.deckGun.pressure,sector:u.special.deckGun.sector,location:u.special.deckGun.location});return a}function state(u){if(u?.supplied&&u.supplied!=="no")return["blue","🔵","Alimenté"];if(u?.status==="onscene")return["green","🟢","Sur les lieux"];if(u?.status==="enroute"||u?.status==="returning")return["yellow","🟡",u.status==="returning"?"Retour vers caserne":"En route"];return["gray","⚪","En caserne"]}function openForm(e=null){const n=new Date(),x=e||{id:"",number:`${n.getFullYear()}-${String(events.length+1).padStart(3,"0")}`,address:"",type:"",alarm:"1",chief:"",notes:""};$("commandEventId").value=x.id||"";$("commandEventNumberInput").value=x.number||"";$("commandEventAddressInput").value=x.address||"";$("commandEventTypeInput").value=x.type||"";$("commandEventAlarmInput").value=x.alarm||"1";$("commandEventChiefInput").value=x.chief||"";$("commandEventNotesInput").value=x.notes||"";$("commandEventDialogTitle").textContent=e?"Modifier l’événement":"Nouvel événement";$("commandEventDialog").showModal()}function addJournal(e,msg){e.journal=e.journal||[];e.journal.unshift({id:uid(),time:new Date().toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"}),message:msg})}async function submit(ev){ev.preventDefault();const id=$("commandEventId").value||uid(),old=events.find(x=>x.id===id),e={...old,id,number:$("commandEventNumberInput").value.trim(),address:$("commandEventAddressInput").value.trim(),type:$("commandEventTypeInput").value.trim(),alarm:$("commandEventAlarmInput").value,chief:$("commandEventChiefInput").value.trim(),notes:$("commandEventNotesInput").value.trim(),status:"active",startedAt:old?.startedAt||new Date().toISOString(),journal:old?.journal||[]};if(!old)addJournal(e,"Événement créé");const i=events.findIndex(x=>x.id===id);if(i>=0)events[i]=e;else events.push(e);activeId=id;localStorage.setItem(AC,id);saveLocal();$("commandEventDialog").close();render();try{await window.fireMapCloud?.saveCommandEvent?.(e)}catch(_){}}async function createEventFromActiveCall(call={}){
+(()=>{"use strict";const $=id=>document.getElementById(id),I=window.fireMapInternal;if(!I)return;const EC="firemap-command-events-v1",AC="firemap-command-active-v1",UC="firemap-vehicle-usages-v2",ACTIVE_EVENT_DATA="firemap-command-active-event-data";let events=[],activeId=localStorage.getItem(AC)||"",timer;const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))||f}catch(_){return f}},write=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),uid=()=>crypto.randomUUID?crypto.randomUUID():`e-${Date.now()}`,esc=v=>I.esc?I.esc(v):String(v??"");function active(){return events.find(e=>e.id===activeId&&e.status!=="closed")||null}function saveLocal(){
+    write(EC,events);
+    const e=active();
+    if(e)write(ACTIVE_EVENT_DATA,{id:e.id,sourceCallId:e.sourceCallId||"",number:e.number,address:e.address});
+    else localStorage.removeItem(ACTIVE_EVENT_DATA);
+  }
+  function usageList(){
+    const e=active();
+    if(!e)return[];
+    return read(UC,[]).filter(u=>String(u.eventId||"")===String(e.id));
+  }
+  function newestByVehicle(){
+    const m=new Map();
+    [...usageList()].sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||""))).forEach(u=>{
+      if(!m.has(String(u.vehicleId)))m.set(String(u.vehicleId),u)
+    });
+    return m
+  }function outletRows(u){const a=[];Object.entries(u?.outlets||{}).forEach(([k,o])=>{if(o?.active)a.push({vehicle:u.vehicleName,name:Number(k)<=2?`Préconnect ${k}`:`Sortie ${k}`,type:o.type,psi:o.pressure,sector:o.sector,location:o.location})});if(u?.special?.fourInch?.active)a.push({vehicle:u.vehicleName,name:"Sortie 4 po",type:"4 po",psi:u.special.fourInch.pressure,sector:u.special.fourInch.sector,location:u.special.fourInch.location});if(u?.special?.deckGun?.active)a.push({vehicle:u.vehicleName,name:"Canon",type:"Canon",psi:u.special.deckGun.pressure,sector:u.special.deckGun.sector,location:u.special.deckGun.location});return a}function state(u){if(u?.supplied&&u.supplied!=="no")return["blue","🔵","Alimenté"];if(u?.status==="onscene")return["green","🟢","Sur les lieux"];if(u?.status==="enroute"||u?.status==="returning")return["yellow","🟡",u.status==="returning"?"Retour vers caserne":"En route"];return["gray","⚪","En caserne"]}function openForm(e=null){const n=new Date(),x=e||{id:"",number:`${n.getFullYear()}-${String(events.length+1).padStart(3,"0")}`,address:"",type:"",alarm:"1",chief:"",notes:""};$("commandEventId").value=x.id||"";$("commandEventNumberInput").value=x.number||"";$("commandEventAddressInput").value=x.address||"";$("commandEventTypeInput").value=x.type||"";$("commandEventAlarmInput").value=x.alarm||"1";$("commandEventChiefInput").value=x.chief||"";$("commandEventNotesInput").value=x.notes||"";$("commandEventDialogTitle").textContent=e?"Modifier l’événement":"Nouvel événement";$("commandEventDialog").showModal()}function addJournal(e,msg){e.journal=e.journal||[];e.journal.unshift({id:uid(),time:new Date().toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"}),message:msg})}async function submit(ev){ev.preventDefault();const id=$("commandEventId").value||uid(),old=events.find(x=>x.id===id),e={...old,id,number:$("commandEventNumberInput").value.trim(),address:$("commandEventAddressInput").value.trim(),type:$("commandEventTypeInput").value.trim(),alarm:$("commandEventAlarmInput").value,chief:$("commandEventChiefInput").value.trim(),notes:$("commandEventNotesInput").value.trim(),sourceCallId:old?.sourceCallId||"",status:"active",startedAt:old?.startedAt||new Date().toISOString(),journal:old?.journal||[]};if(!old)addJournal(e,"Événement créé");const i=events.findIndex(x=>x.id===id);if(i>=0)events[i]=e;else events.push(e);activeId=id;localStorage.setItem(AC,id);saveLocal();$("commandEventDialog").close();render();try{await window.fireMapCloud?.saveCommandEvent?.(e)}catch(_){}}async function createEventFromActiveCall(call={}){
     const address=String(call.adresse||call.address||"").trim();
     if(!address)return;
+    const sourceCallId=String(call.callId||call.eventId||"").trim()||
+      `call-${String(call.startedAt||new Date().toISOString()).replace(/\D/g,"").slice(0,14)}-${I.addressNorm(address).replace(/\s+/g,"-").slice(0,45)}`;
 
-    let e=active();
+    let e=events.find(x=>String(x.sourceCallId||"")===sourceCallId&&x.status!=="closed")||active();
     const sameAddress=e&&String(e.address||"").trim().toLowerCase()===address.toLowerCase();
 
     if(!e){
       const now=new Date();
       e={
         id:uid(),
+        sourceCallId,
         number:`${now.getFullYear()}-${String(events.length+1).padStart(3,"0")}`,
         address,
         type:String(call.callType||"Intervention"),
@@ -25,6 +45,9 @@
       localStorage.setItem(AC,e.id);
     }else{
       let changed=false;
+      if(!e.sourceCallId){e.sourceCallId=sourceCallId;changed=true}
+      activeId=e.id;
+      localStorage.setItem(AC,e.id);
       if(!sameAddress&&address){e.address=address;changed=true}
       if(call.callType&&(!e.type||e.type==="Intervention")){e.type=String(call.callType);changed=true}
       const alarm=String(call.alarmLevel||"").match(/[1-5]/)?.[0];
@@ -33,6 +56,12 @@
     }
 
     saveLocal();
+    window.dispatchEvent(new CustomEvent("firemap:command-event-linked",{detail:{
+      eventId:e.id,
+      sourceCallId:e.sourceCallId||sourceCallId,
+      number:e.number,
+      address:e.address
+    }}));
     render();
     try{
       await window.fireMapCloud?.saveCommandEvent?.(e);
@@ -49,4 +78,10 @@
     open:()=>I.showView("command"),
     getActiveEvent:active
   };
-  events=read(EC,[]);render();timer=setInterval(tick,1000);window.addEventListener("storage",render);})();
+  events=read(EC,[]);
+  render();
+  timer=setInterval(tick,1000);
+  window.addEventListener("storage",render);
+  window.addEventListener("firemap:vehicle-usage-updated",render);
+  window.addEventListener("firemap:command-event-linked",render);
+})();

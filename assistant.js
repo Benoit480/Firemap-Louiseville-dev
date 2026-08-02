@@ -22,18 +22,27 @@
     $("assistantPreplanPanel").classList.toggle("hidden",!b);if(b)$("assistantPreplanSummary").innerHTML=`<div class="assistant-summary"><strong>${esc(b.name)}</strong><span>Risque ${esc(b.risk||"non défini")} · ${esc(String(b.floors||"?"))} étage(s)</span><p>${esc(b.attackSide||b.notes||"Consultez le préplan complet pour les détails opérationnels.")}</p></div>`;
   }
   function start(a,meta={}){
-    active={...a,...meta};
+    const startedAt=meta.startedAt||new Date().toISOString();
+    const callId=String(
+      meta.callId||
+      meta.eventId||
+      `call-${startedAt.replace(/\D/g,"").slice(0,14)}-${I.addressNorm(a.adresse||"").replace(/\s+/g,"-").slice(0,45)}`
+    );
+    active={...a,...meta,callId,startedAt};
+    try{localStorage.setItem("firemap-active-call",JSON.stringify(active))}catch(_){}
     $("assistantAddress").value=a.adresse;
     I.selectAddress(a,false);
     I.showView("assistant");
     render();
     window.dispatchEvent(new CustomEvent("firemap:call-active",{detail:{
       ...active,
+      callId,
+      eventId:callId,
       adresse:active.adresse||a.adresse||"",
       address:active.adresse||a.adresse||"",
       callType:active.callType||meta.callType||"Intervention",
       alarmLevel:active.alarmLevel||meta.alarmLevel||"",
-      startedAt:active.startedAt||meta.startedAt||new Date().toISOString()
+      startedAt
     }}));
   }
   function suggestions(){const q=$("assistantAddress").value.trim();if(q.length<2){$("assistantSuggestions").innerHTML="";return}const nq=I.addressNorm(q);const list=I.getAddresses().filter(a=>I.addressNorm(a.adresse).includes(nq)).slice(0,8);$("assistantSuggestions").innerHTML=list.map((a,i)=>`<button type="button" data-assistant-address="${i}"><strong>${esc(a.adresse)}</strong></button>`).join("");$("assistantSuggestions")._items=list}
