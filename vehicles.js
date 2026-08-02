@@ -71,8 +71,65 @@
     });
   }
 
+  function normalizeVehicleKey(value="") {
+    return String(value).toLowerCase().replace(/[^a-z0-9]/g,"");
+  }
+  function localVehicleUsages() {
+    try {
+      const rows = JSON.parse(localStorage.getItem("firemap-vehicle-usages-v2") || "[]");
+      return Array.isArray(rows) ? rows : [];
+    } catch (_) {
+      return [];
+    }
+  }
+  function usageMatchesVehicle(usage, vehicle) {
+    const id = normalizeVehicleKey(vehicle.id);
+    const number = normalizeVehicleKey(vehicle.number);
+    const name = normalizeVehicleKey(vehicle.name);
+    const usageId = normalizeVehicleKey(usage?.vehicleId);
+    const usageNumber = normalizeVehicleKey(usage?.vehicleNumber);
+    const usageName = normalizeVehicleKey(usage?.vehicleName);
+    return Boolean(
+      (usageId && (usageId === id || usageId === number)) ||
+      (usageNumber && (usageNumber === id || usageNumber === number)) ||
+      (usageName && usageName === name)
+    );
+  }
   function latestUsage(vehicleId) {
-    return window.fireMapVehicleUsage?.latestForVehicle?.(vehicleId) || null;
+    const vehicle = state.vehicles.map(normalizeVehicle)
+      .find(v => String(v.id) === String(vehicleId));
+    if (!vehicle) return null;
+
+    const activeEvent = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("firemap-command-active-event-data") || "null");
+      } catch (_) {
+        return null;
+      }
+    })();
+
+    const fromApi = window.fireMapVehicleUsage?.getAll?.() || [];
+    const fromLocal = localVehicleUsages();
+    const merged = new Map();
+
+    [...fromApi, ...fromLocal].forEach(row => {
+      if (!row) return;
+      const key = String(row.id || `${row.vehicleId}-${row.createdAt || row.updatedAtText || ""}`);
+      merged.set(key, row);
+    });
+
+    const matching = [...merged.values()].filter(row => usageMatchesVehicle(row, vehicle));
+    const linked = activeEvent?.id
+      ? matching.filter(row => String(row.eventId || "") === String(activeEvent.id))
+      : matching;
+    const candidates = linked.length ? linked : matching;
+
+    return candidates.sort((a,b) => {
+      const ad = Date.parse(a.updatedAt || a.createdAt || "") || 0;
+      const bd = Date.parse(b.updatedAt || b.createdAt || "") || 0;
+      if (bd !== ad) return bd - ad;
+      return String(b.updatedAtText || "").localeCompare(String(a.updatedAtText || ""));
+    })[0] || null;
   }
   function usageActiveCount(usage) {
     return window.fireMapVehicleUsage?.activeCount?.(usage) || 0;
@@ -267,7 +324,16 @@
   saveLocal(); renderList();
   window.addEventListener("firemap:vehicle-usages-ready", renderList);
   window.addEventListener("firemap:vehicle-usage-updated", renderList);
+  window.addEventListener("storage", e => {
+    if (!e.key || e.key === "firemap-vehicle-usages-v2") renderList();
+  });
   if (window.fireMapCloud) connectCloud(); else window.addEventListener("firemap-cloud-ready", connectCloud, { once: true });
   window.addEventListener("beforeunload", () => { if (state.watchId != null) navigator.geolocation.clearWatch(state.watchId); });
-  window.fireMapVehicles = { getVehicles: () => state.vehicles, getStation: () => state.station, showStation, showVehicle: showOnMap };
+  window.fireMapVehicles = {
+    getVehicles: () => state.vehicles,
+    getStation: () => state.station,
+    showStation,
+    showVehicle: showOnMap,
+    refreshProfiles: renderList
+  };
 })();
