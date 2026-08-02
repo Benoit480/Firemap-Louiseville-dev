@@ -51,6 +51,8 @@
       subscribeVehicleUsages(ok, fail) { return fs.onSnapshot(fs.collection(db, "utilisations_vehicules"), s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))), fail); },
       saveVehicleUsage(v) { const data={...v,id:String(v.id),vehicleId:String(v.vehicleId||""),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"utilisations_vehicules",String(v.id)),data,{merge:true}); },
       deleteVehicleUsage(id) { return fs.deleteDoc(fs.doc(db,"utilisations_vehicules",String(id))); },
+      subscribeCommandEvents(ok, fail) { return fs.onSnapshot(fs.collection(db, "evenements_commandement"), s => ok(s.docs.map(d => ({ id: d.id, ...d.data() }))), fail); },
+      saveCommandEvent(v) { return fs.setDoc(fs.doc(db,"evenements_commandement",String(v.id)),{...v,updatedAt:fs.serverTimestamp()},{merge:true}); },
       subscribeStation(ok, fail) { return fs.onSnapshot(fs.doc(db,"configuration","caserne"), d => ok(d.exists()?{id:d.id,...d.data()}:null), fail); },
       saveStation(v) { const data={...v,lat:Number(v.lat),lng:Number(v.lng),updatedAt:fs.serverTimestamp()}; return fs.setDoc(fs.doc(db,"configuration","caserne"),data,{merge:true}); },
       async saveMany(items) {

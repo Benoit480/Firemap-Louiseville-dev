@@ -29,6 +29,7 @@
     <button data-view="preplans" class="drawer-link">🏢 Bâtiments</button>
     <button data-view="prevention" class="drawer-link">🛡️ Mode prévention</button>
     <button data-view="vehicles" class="drawer-link">🚒 Caserne et véhicules</button>
+    <button data-view="command" class="drawer-link">🚨 Centre de commandement</button>
     <button data-view="inspections" class="drawer-link">✅ Inspections</button>
     <button data-view="search" class="drawer-link">🔎 Recherche d’adresse</button>
     <div class="drawer-separator"></div>
@@ -158,6 +159,26 @@
       </section>
     </section>
 
+    <section id="view-command" class="view command-view">
+      <div class="section-title"><div><small>CHEF DES OPÉRATIONS</small><h2>🚨 Centre de commandement</h2></div><button id="newCommandEvent" class="primary small">＋ Événement</button></div>
+      <div id="commandEmpty" class="assistant-empty"><span>🚨</span><h3>Aucun événement actif</h3><p>Créez un événement pour regrouper l’intervention et les fiches d’utilisation des véhicules.</p></div>
+      <div id="commandDashboard" class="hidden">
+        <section class="command-event-head"><div><small id="commandEventNumber">ÉVÉNEMENT</small><h2 id="commandEventAddress">—</h2><p id="commandEventType">—</p></div><div><strong id="commandElapsed">00:00</strong><span>Temps écoulé</span></div></section>
+        <div class="command-stats">
+          <article><strong id="commandVehicleCount">0</strong><span>🚒 Véhicules engagés</span></article>
+          <article class="green"><strong id="commandOnSceneCount">0</strong><span>🟢 Sur les lieux</span></article>
+          <article class="blue"><strong id="commandSuppliedCount">0</strong><span>🔵 Alimentés</span></article>
+          <article><strong id="commandFirefighterCount">0</strong><span>👨‍🚒 Pompiers</span></article>
+          <article><strong id="commandOutletCount">0</strong><span>💧 Sorties actives</span></article>
+        </div>
+        <div class="command-tabs"><button class="active" data-command-tab="vehicles">Véhicules</button><button data-command-tab="outlets">Sorties</button><button data-command-tab="journal">Journal</button><button data-command-tab="event">Événement</button></div>
+        <div id="commandPanelVehicles" class="command-panel"><div id="commandVehicleList" class="command-vehicle-grid"></div></div>
+        <div id="commandPanelOutlets" class="command-panel hidden"><div id="commandOutletList" class="command-outlet-list"></div></div>
+        <div id="commandPanelJournal" class="command-panel hidden"><div class="command-journal-add"><input id="commandJournalText" placeholder="Ajouter une note…"><button id="commandJournalAdd" class="primary">Ajouter</button></div><div id="commandJournalList"></div></div>
+        <div id="commandPanelEvent" class="command-panel hidden"><div class="card-item"><p id="commandEventMeta"></p><button id="editCommandEvent" class="secondary">Modifier</button> <button id="endCommandEvent" class="danger">Terminer l’événement</button></div></div>
+      </div>
+    </section>
+
     <section id="view-inspections" class="view">
       <div class="section-title"><div><small>SUIVI</small><h2>Inspections</h2></div></div>
       <div id="inspectionStats" class="stats-grid"></div><div id="inspectionList" class="card-list"></div>
@@ -203,6 +224,22 @@
   <dialog id="addChoiceDialog" class="choice-dialog">
     <div class="modal-head"><div><small>AJOUTER SUR LA CARTE</small><h2>Que voulez-vous ajouter?</h2></div><button type="button" id="closeChoice">×</button></div>
     <div class="choice-grid"><button id="chooseHydrant" class="choice-card"><span>🚰</span><strong>Une borne-fontaine</strong><small>Conserve le formulaire actuel</small></button><button id="chooseBuilding" class="choice-card"><span>🏢</span><strong>Un bâtiment à risque</strong><small>Créer une fiche bâtiment</small></button></div>
+  </dialog>
+
+  <dialog id="commandEventDialog" class="vehicle-dialog">
+    <form id="commandEventForm" method="dialog">
+      <div class="modal-head"><div><small>GESTION D’ÉVÉNEMENT</small><h2 id="commandEventDialogTitle">Nouvel événement</h2></div><button type="button" id="closeCommandEventDialog">×</button></div>
+      <input type="hidden" id="commandEventId">
+      <div class="form-section"><div class="form-grid">
+        <label>Numéro<input id="commandEventNumberInput" required></label>
+        <label>Niveau d’alarme<select id="commandEventAlarmInput"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+        <label class="wide">Adresse<input id="commandEventAddressInput" required></label>
+        <label>Type d’intervention<input id="commandEventTypeInput"></label>
+        <label>Chef des opérations<input id="commandEventChiefInput"></label>
+        <label class="wide">Notes<textarea id="commandEventNotesInput" rows="3"></textarea></label>
+      </div></div>
+      <div class="modal-actions"><span></span><button type="button" id="cancelCommandEventDialog" class="secondary">Annuler</button><button type="submit" class="primary">Enregistrer</button></div>
+    </form>
   </dialog>
 
   <dialog id="buildingDialog" class="building-dialog">
@@ -486,5 +523,6 @@
   <script src="navigation.js"></script>
   <script src="vehicles.js"></script>
   <script src="vehicle-usage.js"></script>
+  <script src="command-center.js"></script>
 </body>
 </html>
