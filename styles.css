@@ -637,3 +637,49 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
     white-space:normal!important;
   }
 }
+
+
+/* FireMap V20.2.6 — lecture seule par défaut */
+.default-readonly-banner{
+  margin:10px 12px 0;
+  padding:11px 14px;
+  border:1px solid #2563eb;
+  border-radius:13px;
+  background:#071426;
+  color:#bfdbfe;
+  font-weight:900;
+  text-align:center;
+}
+#preventionForm.default-readonly input:disabled,
+#preventionForm.default-readonly select:disabled,
+#preventionForm.default-readonly textarea:disabled{
+  opacity:1;
+  color:#e5e7eb!important;
+  -webkit-text-fill-color:#e5e7eb!important;
+  background:#070b12!important;
+  border-color:#334155!important;
+}
+#preventionForm.default-readonly input[type="checkbox"]:disabled{
+  opacity:1;
+  filter:none;
+}
+#preventionForm.default-readonly .category-photo-btn,
+#preventionForm.default-readonly [data-photo-delete]{
+  display:none!important;
+}
+#editPreventionButton{
+  border-color:#f59e0b!important;
+  color:#fde68a!important;
+  font-weight:900;
+}
+.building-main-actions{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+}
+@media(max-width:700px){
+  .building-main-actions{
+    grid-template-columns:1fr 1fr!important;
+  }
+  #openOperationalView{
+    grid-column:1/-1!important;
+  }
+}

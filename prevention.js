@@ -75,7 +75,7 @@
     $("pvElectricalNotes").value=r.electricalNotes;$("pvGasNotes").value=r.gasNotes;$("pvFdcNotes").value=r.fdcNotes;$("pvAccessNotes").value=r.accessNotes;$("pvHazmatNotes").value=r.hazmatNotes;$("pvPhotoUrls").value=r.photoUrls.join("\n");$("pvObservations").value=r.observations;
     $("preventionVisitHistory").innerHTML=r.visits.length?r.visits.map(v=>`<div class="visit-item"><strong>${esc(v.date||"")}</strong><span>${esc(v.inspector||"Inspecteur non inscrit")}</span><p>${esc(v.observations||"Aucune observation")}</p></div>`).join(""):'<p class="muted">Aucune visite enregistrée.</p>';
     document.querySelectorAll("#preventionForm > .form-section").forEach(section=>section.classList.remove("form-section-collapsed"));
-    decoratePhotoRows();renderAllPhotoGalleries();renderAllCategoryGalleries();updateLiveScore();$("preventionDialog").showModal();setTimeout(refreshPreventionLock,0);
+    decoratePhotoRows();renderAllPhotoGalleries();renderAllCategoryGalleries();updateLiveScore();$("preventionDialog").showModal();setTimeout(()=>{refreshPreventionLock();setDefaultReadOnly(true)},0);
   }
   function formRecord(){
     const id=$("preventionBuildingId").value,old=recordFor(id),visitDate=$("preventionVisitDate").value||today();
@@ -86,7 +86,7 @@
     return canonical({...old,id,buildingId:id,inspector:entry.inspector,visitDate,nextReview:$("preventionNextReview").value,occupancy:Number($("preventionOccupancy").value||0),accessCode:$("preventionAccessCode").value.trim(),checks,risks,electricalNotes:$("pvElectricalNotes").value.trim(),gasNotes:$("pvGasNotes").value.trim(),fdcNotes:$("pvFdcNotes").value.trim(),accessNotes:$("pvAccessNotes").value.trim(),hazmatNotes:$("pvHazmatNotes").value.trim(),photoUrls:$("pvPhotoUrls").value,photosByCategory:JSON.parse(JSON.stringify(draftPhotos||{})),observations:entry.observations,visits:same?old.visits:[entry,...old.visits].slice(0,20)});
   }
   function updateLiveScore(){const id=$("preventionBuildingId").value;if(!id)return;const b=buildings().find(x=>String(x.id)===String(id));const r=formRecord();const s=score(r,b);$("preventionScoreValue").textContent=s+" %";$("preventionScoreBar").style.width=s+"%";$("preventionScoreBar").className=scoreState(s);$("preventionScoreLabel").textContent=scoreLabel(s)}
-  async function save(e){e.preventDefault();if(hasActiveIntervention()){I.toast("Mode intervention : fiche en lecture seule.");return;}const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
+  async function save(e){e.preventDefault();if(!preventionEditMode){I.toast("Appuyez sur Modifier pour changer la fiche.");return;}if(hasActiveIntervention()){I.toast("Mode intervention : fiche en lecture seule.");return;}const r=formRecord();const b=buildings().find(x=>String(x.id)===String(r.buildingId||r.id));const s=score(r,b);records.set(r.id,r);persist();queue(r);render();$("preventionDialog").close();try{await window.fireMapPreplans?.applyPreventionData?.(r.buildingId||r.id,r,s)}catch(err){console.warn("Liaison prévention-bâtiment en attente",err)}try{const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)throw new Error("Firebase indisponible");await c.savePrevention(r);clearPending(r.id);I.toast("Fiche Bâtiment synchronisée.")}catch(err){console.error(err);I.toast("Visite enregistrée localement; synchronisation en attente.")}}
   async function flush(){const c=window.fireMapCloud;if(!c?.configured||!c.savePrevention)return;for(const [id,r] of Object.entries(pending()))try{await c.savePrevention(r);clearPending(id)}catch(e){console.error(e)}}
   function connect(){const c=window.fireMapCloud;if(!c?.configured||!c.subscribePrevention){render();return}if(cloudUnsub)cloudUnsub();cloudUnsub=c.subscribePrevention(items=>{const p=pending();records=new Map(items.map(x=>{const r=canonical(x);return[r.id,r]}));Object.values(p).forEach(x=>{const r=canonical(x);records.set(r.id,r)});persist();render();flush()},e=>{console.error(e);I.toast("Prévention en mode local.")});flush()}
   function preplanHtml(id){
@@ -360,7 +360,7 @@
     });
 
     form.querySelectorAll(
-      ".category-photo-btn,[data-photo-delete]"
+      ".category-photo-btn,[data-photo-delete],#editPreventionButton"
     ).forEach(btn=>{
       if(locked){
         btn.dataset.wasHidden=btn.classList.contains("hidden")?"1":"0";
@@ -392,6 +392,61 @@
     forceReadOnlyFromOperationalView=false;
     open(id);
   }
+
+  let preventionEditMode=false;
+
+  function setDefaultReadOnly(readOnly=true){
+    const form=$("preventionForm");
+    if(!form)return;
+
+    preventionEditMode=!readOnly;
+    form.classList.toggle("default-readonly",readOnly);
+    $("defaultReadOnlyBanner")?.classList.toggle("hidden",!readOnly);
+
+    form.querySelectorAll("input,select,textarea").forEach(el=>{
+      if(el.type==="hidden")return;
+      el.disabled=readOnly;
+    });
+
+    form.querySelectorAll(".category-photo-btn,[data-photo-delete],#editPreventionButton").forEach(btn=>{
+      btn.classList.toggle("hidden",readOnly);
+    });
+
+    const save=$("savePreventionButton");
+    if(save){
+      save.disabled=readOnly;
+      save.classList.toggle("hidden",readOnly);
+    }
+
+    const edit=$("editPreventionButton");
+    if(edit){
+      const interventionLocked=hasActiveIntervention();
+      edit.classList.toggle("hidden",!readOnly||interventionLocked);
+    }
+
+    const cancel=$("cancelPreventionDialog");
+    if(cancel)cancel.textContent=readOnly?"Fermer":"Annuler";
+  }
+
+  function enablePreventionEditing(){
+    if(hasActiveIntervention()){
+      I.toast("Mode intervention : fiche en consultation seulement.");
+      return;
+    }
+    setDefaultReadOnly(false);
+    I.toast("Mode modification activé.");
+  }
+
+  function cancelPreventionEditing(){
+    if(preventionEditMode){
+      const id=$("preventionBuildingId")?.value;
+      preventionEditMode=false;
+      if(id)open(id);
+      return;
+    }
+    $("preventionDialog").close();
+  }
+
   window.fireMapPrevention={
     refreshReadOnly:refreshPreventionLock,
     getRecordForBuilding:id=>records.get(String(id))||null,
@@ -401,10 +456,16 @@
     openOperational,
     preplanHtml
   };
-  $("preventionBackMap").onclick=()=>I.showView("map");$("preventionSearch").oninput=render;$("preventionFilter").onchange=render;$("closePreventionDialog").onclick=$("cancelPreventionDialog").onclick=()=>{
+  $("preventionBackMap").onclick=()=>I.showView("map");
+  $("preventionSearch").oninput=render;
+  $("preventionFilter").onchange=render;
+  $("editPreventionButton").onclick=enablePreventionEditing;
+  $("closePreventionDialog").onclick=()=>{
     $("preventionDialog").close();
+    preventionEditMode=false;
     forceReadOnlyFromOperationalView=false;
   };
+  $("cancelPreventionDialog").onclick=cancelPreventionEditing;
   $("openOperationalView").onclick=()=>{const id=$("preventionBuildingId").value;if(id)openOperational(id)};
   $("closeOperationalBuilding").onclick=()=>{
     $("operationalBuildingDialog").close();
