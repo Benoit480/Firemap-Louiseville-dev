@@ -29,7 +29,7 @@
     return item;
   }
 
-  function render(){const box=$("vehicleUsageList");if(!box)return;const sorted=[...usages].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));box.innerHTML=sorted.length?sorted.map(u=>`<article class="vehicle-usage-card"><div class="vehicle-usage-icon">🚒</div><div class="vehicle-usage-main"><h4>${esc(u.vehicleName||"Véhicule")}</h4><strong>${esc(STATUS[u.status])}</strong>${u.eventId?`<small class="vehicle-event-link">🚨 Événement lié</small>`:""}<p>👨‍🚒 ${u.firefighters} pompier${u.firefighters>1?"s":""} · 💧 ${esc(suppliedLabel(u.supplied))}</p><p>${activeCount(u)} sortie${activeCount(u)>1?"s":""} en service</p><small>${esc(u.updatedAtText)}</small></div><button class="secondary small" data-usage-edit="${esc(u.id)}">Ouvrir</button></article>`).join(""):'<div class="card-item"><strong>Aucune fiche véhicule</strong></div>'}
+  function render(){const box=$("vehicleUsageList");if(!box){window.dispatchEvent(new CustomEvent("firemap:vehicle-usages-ready"));return;}const sorted=[...usages].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));box.innerHTML=sorted.length?sorted.map(u=>`<article class="vehicle-usage-card"><div class="vehicle-usage-icon">🚒</div><div class="vehicle-usage-main"><h4>${esc(u.vehicleName||"Véhicule")}</h4><strong>${esc(STATUS[u.status])}</strong>${u.eventId?`<small class="vehicle-event-link">🚨 Événement lié</small>`:""}<p>👨‍🚒 ${u.firefighters} pompier${u.firefighters>1?"s":""} · 💧 ${esc(suppliedLabel(u.supplied))}</p><p>${activeCount(u)} sortie${activeCount(u)>1?"s":""} en service</p><small>${esc(u.updatedAtText)}</small></div><button class="secondary small" data-usage-edit="${esc(u.id)}">Ouvrir</button></article>`).join(""):'<div class="card-item"><strong>Aucune fiche véhicule</strong></div>'}
   function fillVehicleOptions(){const s=$("vehicleUsageVehicle");s.innerHTML=vehicles().map(v=>`<option value="${esc(v.id)}">${esc(v.name)}</option>`).join("")}
   function setStatus(s){$("vehicleUsageStatus").value=s;$("vehicleUsageStatusText").textContent=`État : ${STATUS[s]}`;document.querySelectorAll("[data-usage-status]").forEach(b=>b.classList.toggle("active",b.dataset.usageStatus===s))}
   function hid(k){return $(k==="fourInch"?"fourInchActive":k==="deckGun"?"deckGunActive":`outlet${k}Active`)}
@@ -40,16 +40,52 @@
   function openForm(item=null){fillVehicleOptions();const u=item?canonical(item):ensureEventLink(canonical({}));$("vehicleUsageId").value=item?u.id:"";$("vehicleUsageVehicle").value=u.vehicleId||vehicles()[0]?.id||"";$("vehicleUsageFirefighters").value=u.firefighters;$("vehicleUsageSupplied").value=u.supplied;$("vehicleUsageResidualStart").value=u.residualStart;$("vehicleUsageResidualEnd").value=u.residualEnd;$("vehicleUsageNotes").value=u.notes;$("vehicleUsageTitle").textContent=item?`Modifier — ${u.vehicleName}`:"Nouvelle fiche véhicule";$("deleteVehicleUsage").classList.toggle("hidden",!item);setStatus(u.status);for(let n=1;n<=6;n++)fillOutlet(String(n),u.outlets[n]);fillOutlet("fourInch",u.special.fourInch);fillOutlet("deckGun",u.special.deckGun);$("vehicleUsageDialog").showModal()}
   function fromForm(){const id=$("vehicleUsageId").value||uid(),v=vehicles().find(x=>String(x.id)===String($("vehicleUsageVehicle").value))||{},old=usages.find(x=>x.id===id),outlets={};for(let n=1;n<=6;n++)outlets[n]=readOutlet(String(n));return ensureEventLink(canonical({...old,id,vehicleId:String(v.id||""),vehicleName:v.name||"",vehicleNumber:v.number||"",status:$("vehicleUsageStatus").value,firefighters:$("vehicleUsageFirefighters").value,supplied:$("vehicleUsageSupplied").value,outlets,special:{fourInch:readOutlet("fourInch"),deckGun:readOutlet("deckGun")},residualStart:$("vehicleUsageResidualStart").value,residualEnd:$("vehicleUsageResidualEnd").value,notes:$("vehicleUsageNotes").value.trim(),createdAt:old?.createdAt||new Date().toISOString(),updatedAtText:new Date().toLocaleString("fr-CA")}))}
   async function save(e){e.preventDefault();const u=fromForm(),i=usages.findIndex(x=>x.id===u.id);if(i>=0)usages[i]=u;else usages.push(u);persist();queue(u);render();$("vehicleUsageDialog").close();
+    window.dispatchEvent(new CustomEvent("firemap:vehicle-usages-ready"));
     window.dispatchEvent(new CustomEvent("firemap:vehicle-usage-updated",{detail:{eventId:u.eventId,usage:u}}));
     try{await window.fireMapCloud?.saveVehicleUsage?.(u);clearPending(u.id);core.toast("Fiche véhicule synchronisée.")}catch(err){console.warn(err);core.toast("Fiche enregistrée localement.")}}
   async function remove(){const id=$("vehicleUsageId").value;if(!id||!confirm("Supprimer cette fiche véhicule?"))return;usages=usages.filter(x=>x.id!==id);persist();render();$("vehicleUsageDialog").close();
+    window.dispatchEvent(new CustomEvent("firemap:vehicle-usages-ready"));
     window.dispatchEvent(new CustomEvent("firemap:vehicle-usage-updated",{detail:{eventId:"",deletedId:id}}));
     try{await window.fireMapCloud?.deleteVehicleUsage?.(id)}catch(_){}}
   async function flush(){for(const u of Object.values(pending()))try{await window.fireMapCloud?.saveVehicleUsage?.(u);clearPending(u.id)}catch(_){}}
-  function connect(){const c=window.fireMapCloud;if(!c?.subscribeVehicleUsages){render();return}cloudUnsub?.();cloudUnsub=c.subscribeVehicleUsages(items=>{const p=pending();usages=items.map(canonical);Object.values(p).forEach(x=>{const u=canonical(x),i=usages.findIndex(y=>y.id===u.id);if(i>=0)usages[i]=u;else usages.push(u)});persist();render();flush()},console.error);flush()}
+  function connect(){const c=window.fireMapCloud;if(!c?.subscribeVehicleUsages){render();return}cloudUnsub?.();cloudUnsub=c.subscribeVehicleUsages(items=>{const p=pending();usages=items.map(canonical);Object.values(p).forEach(x=>{const u=canonical(x),i=usages.findIndex(y=>y.id===u.id);if(i>=0)usages[i]=u;else usages.push(u)});persist();render();window.dispatchEvent(new CustomEvent("firemap:vehicle-usages-ready"));flush()},console.error);flush()}
   document.addEventListener("click",e=>{const s=e.target.closest("[data-usage-status]");if(s)setStatus(s.dataset.usageStatus);const o=e.target.closest("[data-outlet-toggle]");if(o){const k=o.dataset.outletToggle;setActive(k,!active(k))}const ed=e.target.closest("[data-usage-edit]");if(ed)openForm(usages.find(x=>x.id===ed.dataset.usageEdit))});
   $("newVehicleUsage").onclick=()=>openForm();$("closeVehicleUsageDialog").onclick=$("cancelVehicleUsageDialog").onclick=()=>$("vehicleUsageDialog").close();$("deleteVehicleUsage").onclick=remove;$("vehicleUsageForm").onsubmit=save;
+  function latestForVehicle(vehicleId){
+    return [...usages]
+      .filter(u=>String(u.vehicleId)===String(vehicleId))
+      .sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")))[0]||null;
+  }
+  function openForVehicle(vehicleId){
+    const existing=latestForVehicle(vehicleId);
+    if(existing)return openForm(existing);
+    const event=activeCommandEvent();
+    const vehicle=vehicles().find(v=>String(v.id)===String(vehicleId));
+    const fresh=ensureEventLink(canonical({
+      vehicleId:String(vehicle?.id||vehicleId),
+      vehicleName:vehicle?.name||"",
+      vehicleNumber:vehicle?.number||""
+    }));
+    openForm(fresh);
+    $("vehicleUsageId").value="";
+    $("vehicleUsageVehicle").value=String(vehicleId);
+    $("vehicleUsageTitle").textContent=`Nouvelle fiche — ${vehicle?.name||"Véhicule"}`;
+  }
+  function getAll(){return usages.map(canonical)}
+  function refreshVehicleProfiles(){
+    window.dispatchEvent(new CustomEvent("firemap:vehicle-usages-ready"));
+  }
+
   usages=read(CACHE,[]).map(canonical);
-  window.addEventListener("firemap:command-event-linked",()=>render());
-  render();if(window.fireMapCloud)connect();else window.addEventListener("firemap-cloud-ready",connect,{once:true});
+  window.fireMapVehicleUsage={
+    getAll,
+    latestForVehicle,
+    openForVehicle,
+    activeCount,
+    suppliedLabel
+  };
+  window.addEventListener("firemap:command-event-linked",()=>{render();refreshVehicleProfiles()});
+  render();
+  refreshVehicleProfiles();
+  if(window.fireMapCloud)connect();else window.addEventListener("firemap-cloud-ready",connect,{once:true});
 })();

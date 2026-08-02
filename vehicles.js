@@ -70,16 +70,104 @@
       state.markers.set(v.id, marker);
     });
   }
+
+  function latestUsage(vehicleId) {
+    return window.fireMapVehicleUsage?.latestForVehicle?.(vehicleId) || null;
+  }
+  function usageActiveCount(usage) {
+    return window.fireMapVehicleUsage?.activeCount?.(usage) || 0;
+  }
+  function usageSupplyLabel(value) {
+    return window.fireMapVehicleUsage?.suppliedLabel?.(value) || "Non alimenté";
+  }
+  function usageState(usage, vehicle) {
+    if (usage?.supplied && usage.supplied !== "no") {
+      return { label: "Alimenté", color: "#3b82f6", className: "usage-supplied" };
+    }
+    if (usage?.status === "onscene") {
+      return { label: "Sur les lieux", color: "#22c55e", className: "usage-onscene" };
+    }
+    if (usage?.status === "enroute") {
+      return { label: "En route", color: "#eab308", className: "usage-enroute" };
+    }
+    if (usage?.status === "returning") {
+      return { label: "Retour vers caserne", color: "#eab308", className: "usage-returning" };
+    }
+    const meta = statusMeta(vehicle.status);
+    return { label: meta.label, color: meta.color, className: "usage-station" };
+  }
+  function activeOutletSummary(usage) {
+    if (!usage) return "";
+    const rows = [];
+    Object.entries(usage.outlets || {}).forEach(([number, outlet]) => {
+      if (!outlet?.active) return;
+      const name = Number(number) <= 2 ? `Préconnect ${number}` : `Sortie ${number}`;
+      const details = [
+        outlet.type,
+        outlet.pressure !== "" && outlet.pressure != null ? `${outlet.pressure} PSI` : "",
+        outlet.sector ? `Secteur ${outlet.sector}` : "",
+        outlet.location || ""
+      ].filter(Boolean).join(" · ");
+      rows.push(`<li><strong>${esc(name)}</strong>${details ? `<span>${esc(details)}</span>` : ""}</li>`);
+    });
+    const four = usage.special?.fourInch;
+    if (four?.active) {
+      const details = [
+        four.pressure !== "" && four.pressure != null ? `${four.pressure} PSI` : "",
+        four.sector ? `Secteur ${four.sector}` : "",
+        four.location || ""
+      ].filter(Boolean).join(" · ");
+      rows.push(`<li><strong>Sortie 4 po</strong>${details ? `<span>${esc(details)}</span>` : ""}</li>`);
+    }
+    const gun = usage.special?.deckGun;
+    if (gun?.active) {
+      const details = [
+        gun.pressure !== "" && gun.pressure != null ? `${gun.pressure} PSI` : "",
+        gun.sector ? `Secteur ${gun.sector}` : "",
+        gun.location || ""
+      ].filter(Boolean).join(" · ");
+      rows.push(`<li><strong>Canon</strong>${details ? `<span>${esc(details)}</span>` : ""}</li>`);
+    }
+    return rows.length ? `<ul class="vehicle-profile-outlets">${rows.join("")}</ul>` : '<p class="vehicle-profile-empty">Aucune sortie en service</p>';
+  }
   function renderList() {
     $("stationNameDisplay").textContent = state.station.name;
     $("stationAddressDisplay").textContent = state.station.address || "Adresse non inscrite";
     const box = $("vehicleList");
     box.innerHTML = state.vehicles.map(normalizeVehicle).map(v => {
-      const m = statusMeta(v.status), sharing = state.sharingId === v.id;
-      return `<article class="vehicle-card ${sharing ? "sharing" : ""}" style="--vehicle-status:${m.color}">
-        <div class="vehicle-symbol">${esc(v.icon)}</div>
-        <div class="vehicle-main"><h3>${esc(v.name)}</h3><span class="vehicle-status">${esc(m.label)}</span><p>${esc(v.crew || "Équipage non inscrit")}</p><p>${sharing ? "📡 Ce téléphone partage sa position" : (v.sharing ? "📍 Position GPS partagée" : "Position à la caserne ou dernière position connue")}</p></div>
-        <div class="vehicle-actions"><button class="secondary small" data-vehicle-show="${esc(v.id)}">Carte</button><button class="secondary small" data-vehicle-edit="${esc(v.id)}">Modifier</button><button class="${sharing ? "danger" : "primary"} small" data-vehicle-share="${esc(v.id)}">${sharing ? "Arrêter GPS" : "Partager GPS"}</button></div>
+      const usage = latestUsage(v.id);
+      const operational = usageState(usage, v);
+      const sharing = state.sharingId === v.id;
+      const count = usageActiveCount(usage);
+      const linked = Boolean(usage?.eventId);
+      return `<article class="vehicle-card vehicle-profile-card ${sharing ? "sharing" : ""} ${operational.className}" style="--vehicle-status:${operational.color}">
+        <div class="vehicle-profile-top">
+          <div class="vehicle-symbol">${esc(v.icon)}</div>
+          <div class="vehicle-main">
+            <h3>${esc(v.name)}</h3>
+            <span class="vehicle-status">${esc(operational.label)}</span>
+            ${linked ? '<span class="vehicle-profile-linked">🚨 Événement actif lié</span>' : ""}
+          </div>
+        </div>
+
+        <div class="vehicle-profile-usage">
+          <div class="vehicle-profile-stats">
+            <span>👨‍🚒 <strong>${Number(usage?.firefighters || 0)}</strong> pompier${Number(usage?.firefighters || 0) > 1 ? "s" : ""}</span>
+            <span>💧 <strong>${esc(usageSupplyLabel(usage?.supplied || "no"))}</strong></span>
+            <span>🚿 <strong>${count}</strong> sortie${count > 1 ? "s" : ""} active${count > 1 ? "s" : ""}</span>
+          </div>
+          ${activeOutletSummary(usage)}
+          ${usage?.residualStart !== "" && usage?.residualStart != null ? `<p class="vehicle-profile-pressure">Résiduel initial : <strong>${usage.residualStart} PSI</strong>${usage?.residualEnd !== "" && usage?.residualEnd != null ? ` · Final : <strong>${usage.residualEnd} PSI</strong>` : ""}</p>` : ""}
+          ${usage?.notes ? `<p class="vehicle-profile-notes">${esc(usage.notes)}</p>` : ""}
+          <small>${usage?.updatedAtText ? `Dernière fiche : ${esc(usage.updatedAtText)}` : "Aucune fiche d’utilisation enregistrée"}</small>
+        </div>
+
+        <div class="vehicle-actions vehicle-profile-actions">
+          <button class="primary small" data-vehicle-usage="${esc(v.id)}">${usage ? "Modifier la fiche" : "Créer la fiche"}</button>
+          <button class="secondary small" data-vehicle-show="${esc(v.id)}">Carte</button>
+          <button class="secondary small" data-vehicle-edit="${esc(v.id)}">Profil unité</button>
+          <button class="${sharing ? "danger" : "secondary"} small" data-vehicle-share="${esc(v.id)}">${sharing ? "Arrêter GPS" : "Partager GPS"}</button>
+        </div>
       </article>`;
     }).join("");
     $("vehicleSyncStatus").textContent = window.fireMapCloud?.configured ? "Synchronisation Firebase active" : "Mode local";
@@ -161,6 +249,8 @@
     const show = e.target.closest("[data-vehicle-show]"); if (show) showOnMap(show.dataset.vehicleShow);
     const edit = e.target.closest("[data-vehicle-edit]"); if (edit) openVehicle(edit.dataset.vehicleEdit);
     const share = e.target.closest("[data-vehicle-share]"); if (share) toggleSharing(share.dataset.vehicleShare);
+    const usageButton = e.target.closest("[data-vehicle-usage]");
+    if (usageButton) window.fireMapVehicleUsage?.openForVehicle?.(usageButton.dataset.vehicleUsage);
     if (e.target.closest("[data-station-nav]")) location.href = core.navUrl(state.station.lat, state.station.lng);
   });
   $("vehiclesBackMap").onclick = () => core.showView("map");
@@ -175,6 +265,8 @@
 
   state.vehicles = DEFAULT_VEHICLES.map(def => normalizeVehicle({ ...def, ...(state.vehicles.find(v => String(v.id) === def.id) || {}), lat: state.vehicles.find(v => String(v.id) === def.id)?.lat ?? state.station.lat, lng: state.vehicles.find(v => String(v.id) === def.id)?.lng ?? state.station.lng }));
   saveLocal(); renderList();
+  window.addEventListener("firemap:vehicle-usages-ready", renderList);
+  window.addEventListener("firemap:vehicle-usage-updated", renderList);
   if (window.fireMapCloud) connectCloud(); else window.addEventListener("firemap-cloud-ready", connectCloud, { once: true });
   window.addEventListener("beforeunload", () => { if (state.watchId != null) navigator.geolocation.clearWatch(state.watchId); });
   window.fireMapVehicles = { getVehicles: () => state.vehicles, getStation: () => state.station, showStation, showVehicle: showOnMap };
