@@ -467,3 +467,26 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
     grid-column:1/-1;
   }
 }
+
+
+/* FireMap V20.2.1 — création d'un bâtiment vers la fiche Prévention */
+#buildingDialog.new-building-mode .building-legacy-details{
+  display:none!important;
+}
+.new-building-help{
+  margin:0 0 14px;
+  padding:11px 13px;
+  border:1px solid #2563eb;
+  border-radius:12px;
+  background:#071426;
+  color:#bfdbfe;
+  line-height:1.4;
+}
+#buildingDialog.new-building-mode #buildingForm{
+  max-width:720px;
+}
+#buildingDialog.new-building-mode #saveBuildingButton{
+  background:#dc2626;
+  border-color:#ef4444;
+  font-weight:900;
+}

@@ -31,9 +31,66 @@
   function setBuildings(items,{persist=true}={}){buildings=items.map(canonical);if(persist)saveCachedBuildings(buildings);renderMarkers();renderList();window.dispatchEvent(new CustomEvent("firemap:buildings-updated",{detail:{buildings:buildings.slice()}}))}
   function openChoice(point=null){if(point){pendingMapPoint={lat:Number(point.lat),lng:Number(point.lng)};I.state.lastMapClick={...pendingMapPoint}}else pendingMapPoint=null;$("addChoiceDialog").showModal() }
   function mapPoint(){return pendingMapPoint||I.state.lastMapClick||I.state.user||{lat:I.map.getCenter().lat,lng:I.map.getCenter().lng}}
-  function openForm(b=null){const p=mapPoint();$("buildingModalTitle").textContent=b?`Modifier — ${b.name}`:"Ajouter un bâtiment à risque";$("buildingId").value=b?.id||"";$("buildingName").value=b?.name||"";$("buildingCategory").value=b?.category||"other";$("buildingAddress").value=b?.address||I.nearestAddress?.(p)||I.state.selected?.adresse||"";$("buildingLat").value=b?.lat??I.state.selected?.lat??p.lat.toFixed(7);$("buildingLng").value=b?.lng??I.state.selected?.lng??p.lng.toFixed(7);$("buildingRisk").value=b?.risk||"high";$("buildingFloors").value=b?.floors||1;$("buildingBasement").value=b?.basement||"no";$("buildingRisks").value=b?.risks||"";$("buildingFdc").value=b?.fdc||"";$("buildingElectrical").value=b?.electrical||"";$("buildingGas").value=b?.gas||"";$("buildingHazmat").value=b?.hazmat||"";$("buildingAccess").value=b?.access||"";$("buildingAssembly").value=b?.assembly||"";$("buildingAttackSide").value=b?.attackSide||"";$("buildingContactName").value=b?.contactName||"";$("buildingContactPhone").value=b?.contactPhone||"";$("buildingPlanUrl").value=b?.planUrl||"";$("buildingPhotoUrls").value=(b?.photoUrls||[]).join("\n");$("buildingNotes").value=b?.notes||"";$("deleteBuilding").classList.toggle("hidden",!b);$("buildingDialog").showModal()}
+  function openForm(b=null){
+    const p=mapPoint(),isNew=!b;
+    $("buildingDialog").classList.toggle("new-building-mode",isNew);
+    $("buildingModalTitle").textContent=isNew?"Nouveau bâtiment — Identification":`Modifier — ${b.name}`;
+    $("newBuildingHelp")?.classList.toggle("hidden",!isNew);
+    $("saveBuildingButton").textContent=isNew?"Continuer vers la fiche Prévention":"Enregistrer";
+    $("buildingId").value=b?.id||"";
+    $("buildingName").value=b?.name||"";
+    $("buildingCategory").value=b?.category||"other";
+    $("buildingAddress").value=b?.address||I.nearestAddress?.(p)||I.state.selected?.adresse||"";
+    $("buildingLat").value=b?.lat??I.state.selected?.lat??p.lat.toFixed(7);
+    $("buildingLng").value=b?.lng??I.state.selected?.lng??p.lng.toFixed(7);
+    $("buildingRisk").value=b?.risk||"high";
+    $("buildingFloors").value=b?.floors||1;
+    $("buildingBasement").value=b?.basement||"no";
+    $("buildingRisks").value=b?.risks||"";
+    $("buildingFdc").value=b?.fdc||"";
+    $("buildingElectrical").value=b?.electrical||"";
+    $("buildingGas").value=b?.gas||"";
+    $("buildingHazmat").value=b?.hazmat||"";
+    $("buildingAccess").value=b?.access||"";
+    $("buildingAssembly").value=b?.assembly||"";
+    $("buildingAttackSide").value=b?.attackSide||"";
+    $("buildingContactName").value=b?.contactName||"";
+    $("buildingContactPhone").value=b?.contactPhone||"";
+    $("buildingPlanUrl").value=b?.planUrl||"";
+    $("buildingPhotoUrls").value=(b?.photoUrls||[]).join("\n");
+    $("buildingNotes").value=b?.notes||"";
+    $("deleteBuilding").classList.toggle("hidden",isNew);
+    $("buildingDialog").showModal();
+  }
   function fromForm(){return canonical({id:$("buildingId").value||uid(),name:$("buildingName").value,address:$("buildingAddress").value,lat:$("buildingLat").value,lng:$("buildingLng").value,category:$("buildingCategory").value,risk:$("buildingRisk").value,floors:$("buildingFloors").value,basement:$("buildingBasement").value,risks:$("buildingRisks").value,fdc:$("buildingFdc").value,electrical:$("buildingElectrical").value,gas:$("buildingGas").value,hazmat:$("buildingHazmat").value,access:$("buildingAccess").value,assembly:$("buildingAssembly").value,attackSide:$("buildingAttackSide").value,contactName:$("buildingContactName").value,contactPhone:$("buildingContactPhone").value,planUrl:$("buildingPlanUrl").value,photoUrls:$("buildingPhotoUrls").value,notes:$("buildingNotes").value})}
-  async function save(){const b=fromForm();if(!b.name.trim()||!b.address.trim())return I.toast("Nom et adresse requis.");if(!isFinite(b.lat)||!isFinite(b.lng))return I.toast("Coordonnées invalides.");const i=buildings.findIndex(x=>x.id===b.id);if(i>=0)buildings[i]=b;else buildings.push(b);queueSave(b);setBuildings(buildings);$("buildingDialog").close();const c=window.fireMapCloud;try{if(!c?.configured||!c.saveBuilding)throw new Error("Firebase pas encore prêt");await c.saveBuilding(b);clearPendingSave(b.id);I.toast("Préplan enregistré et synchronisé.")}catch(e){console.error(e);I.toast("Préplan sauvegardé sur cet appareil; synchronisation automatique en attente.")}}
+  async function save(){
+    const wasNew=!$("buildingId").value;
+    const b=fromForm();
+    if(!b.name.trim()||!b.address.trim())return I.toast("Nom et adresse requis.");
+    if(!isFinite(b.lat)||!isFinite(b.lng))return I.toast("Coordonnées invalides.");
+    const i=buildings.findIndex(x=>x.id===b.id);
+    if(i>=0)buildings[i]=b;else buildings.push(b);
+    queueSave(b);
+    setBuildings(buildings);
+    $("buildingDialog").close();
+    const c=window.fireMapCloud;
+    try{
+      if(!c?.configured||!c.saveBuilding)throw new Error("Firebase pas encore prêt");
+      await c.saveBuilding(b);
+      clearPendingSave(b.id);
+      I.toast(wasNew?"Bâtiment créé. Complétez maintenant la fiche Prévention.":"Bâtiment enregistré et synchronisé.");
+    }catch(e){
+      console.error(e);
+      I.toast(wasNew?"Bâtiment créé localement. Complétez la fiche Prévention.":"Bâtiment sauvegardé; synchronisation automatique en attente.");
+    }finally{
+      if(wasNew){
+        setTimeout(()=>{
+          if(window.fireMapPrevention?.open)window.fireMapPrevention.open(b.id);
+          else I.toast("La fiche Prévention sera disponible dans le menu Bâtiments.");
+        },150);
+      }
+    }
+  }
   async function remove(){const id=$("buildingId").value;if(!id||!confirm("Supprimer définitivement ce bâtiment et son préplan?"))return;buildings=buildings.filter(b=>b.id!==id);queueDelete(id);setBuildings(buildings);$("buildingDialog").close();const c=window.fireMapCloud;try{if(!c?.configured||!c.deleteBuilding)throw new Error("Firebase pas encore prêt");await c.deleteBuilding(id);clearPendingDelete(id);I.toast("Bâtiment supprimé et synchronisé.")}catch(e){console.error(e);I.toast("Suppression enregistrée; synchronisation automatique en attente.")}}
   function section(title,icon,text){if(!text)return "";return `<section class="preplan-section"><h3>${icon} ${title}</h3><p>${esc(text).replace(/\n/g,"<br>")}</p></section>`}
   function openPreplan(b){if(!b)return;const photos=(b.photoUrls||[]).map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Photo du bâtiment" loading="lazy"></a>`).join("");$("preplanContent").innerHTML=`<div class="modal-head"><div><small>PRÉPLAN OPÉRATIONNEL</small><h2>${esc(b.name)}</h2></div><button type="button" data-close-preplan>×</button></div><div class="preplan-hero"><div class="building-list-icon large" style="--risk:${riskColor[b.risk]}">${categoryIcon[b.category]}</div><div><strong>${esc(b.address)}</strong><span>${categoryLabel[b.category]} · Risque ${riskLabel[b.risk]} · ${b.floors||"?"} étage(s)</span>${b.lastPreventionVisit?`<small class="building-prevention-meta">Dernière prévention : ${esc(b.lastPreventionVisit)}${b.preventionInspector?` — ${esc(b.preventionInspector)}`:""}${b.preventionScore?` · ${esc(String(b.preventionScore))}%`:""}</small>`:""}</div></div><div class="preplan-actions"><button class="primary" data-nav-building="${esc(b.id)}">➤ Naviguer</button><button class="secondary" data-map-building="${esc(b.id)}">🗺️ Voir sur la carte</button><button class="secondary prevention-open-btn" data-open-prevention="${esc(b.id)}">🛡️ Prévention</button>${b.planUrl?`<a class="button-link primary" href="${esc(b.planUrl)}" target="_blank" rel="noopener">📄 Ouvrir le plan</a>`:""}</div><div class="preplan-grid">${section("Risques particuliers","⚠️",b.risks)}${section("FDC / prise pompier","💧",b.fdc)}${section("Électricité","⚡",b.electrical)}${section("Gaz / propane","🔥",b.gas)}${section("Matières dangereuses","☣️",b.hazmat)}${section("Accès pompier","🚪",b.access)}${section("Point de rassemblement","📍",b.assembly)}${section("Côté d’attaque conseillé","🚒",b.attackSide)}${section("Responsable","👤",[b.contactName,b.contactPhone].filter(Boolean).join(" — "))}${section("Notes opérationnelles","📝",b.notes)}</div>${window.fireMapPrevention?.preplanHtml?.(b.id)||""}${photos?`<section class="preplan-section"><h3>📷 Photos</h3><div class="photo-grid">${photos}</div></section>`:""}<div class="modal-actions"><button class="secondary" data-edit-building="${esc(b.id)}">Modifier</button><button class="primary" data-close-preplan>Fermer</button></div>`;$("preplanDialog").showModal()}
@@ -48,7 +105,7 @@
     const pv=e.target.closest("[data-open-prevention]");if(pv){$("preplanDialog").close();window.fireMapPrevention?.open?.(pv.dataset.openPrevention)}
     if(e.target.closest("[data-close-preplan]"))$("preplanDialog").close();
   },true);
-  $("closeChoice").onclick=()=>{$("addChoiceDialog").close();pendingMapPoint=null};$("chooseHydrant").onclick=()=>{$("addChoiceDialog").close();I.openHydrantForm();pendingMapPoint=null};$("chooseBuilding").onclick=()=>{$("addChoiceDialog").close();openForm();pendingMapPoint=null};$("addBuildingTop").onclick=()=>openForm();$("closeBuildingModal").onclick=$("cancelBuilding").onclick=()=>$("buildingDialog").close();$("buildingForm").onsubmit=e=>{e.preventDefault();save()};$("deleteBuilding").onclick=remove;$("buildingSearch").oninput=renderList;$("riskFilter").onchange=renderList;$("buildingToggle").onchange=e=>e.target.checked?layer.addTo(I.map):I.map.removeLayer(layer);
+  $("closeChoice").onclick=()=>{$("addChoiceDialog").close();pendingMapPoint=null};$("chooseHydrant").onclick=()=>{$("addChoiceDialog").close();I.openHydrantForm();pendingMapPoint=null};$("chooseBuilding").onclick=()=>{$("addChoiceDialog").close();openForm();pendingMapPoint=null};$("addBuildingTop").onclick=()=>openForm();$("closeBuildingModal").onclick=$("cancelBuilding").onclick=()=>{$("buildingDialog").classList.remove("new-building-mode");$("buildingDialog").close()};$("buildingForm").onsubmit=e=>{e.preventDefault();save()};$("deleteBuilding").onclick=remove;$("buildingSearch").oninput=renderList;$("riskFilter").onchange=renderList;$("buildingToggle").onchange=e=>e.target.checked?layer.addTo(I.map):I.map.removeLayer(layer);
   // Mode édition sécuritaire : maintenir 1 seconde sur la carte pour ajouter un élément.
   const editBtn=$("editModeBtn"), mapContainer=I.map.getContainer();
   let editMode=false, holdTimer=null, holdStart=null, holdPointerId=null, holdTriggered=false;
