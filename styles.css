@@ -1101,3 +1101,159 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
     grid-template-columns:1fr;
   }
 }
+
+
+/* FireMap V22.1.0 — journal d’intervention automatique */
+.command-journal-toolbar{
+  display:grid;
+  gap:10px;
+  margin-bottom:11px;
+}
+.command-journal-add{
+  display:grid;
+  grid-template-columns:160px 130px 160px 1fr auto;
+  gap:8px;
+}
+.command-journal-filters{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding-bottom:3px;
+}
+.command-journal-filters button{
+  min-height:38px;
+  padding:7px 11px;
+  border:1px solid #334155;
+  border-radius:10px;
+  background:#0b1220;
+  color:#e5e7eb;
+  font-weight:800;
+  white-space:nowrap;
+}
+.command-journal-filters button.active{
+  border-color:#ef4444;
+  background:#3b0b12;
+}
+.command-journal-summary{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:11px;
+}
+.command-journal-summary span{
+  padding:8px 11px;
+  border:1px solid #334155;
+  border-radius:10px;
+  background:#080d15;
+  color:#cbd5e1;
+}
+.command-journal-summary strong{
+  color:#fff;
+}
+.command-journal-timeline{
+  position:relative;
+  display:grid;
+  gap:8px;
+}
+.command-journal-timeline:before{
+  content:"";
+  position:absolute;
+  top:8px;
+  bottom:8px;
+  left:67px;
+  width:2px;
+  background:#334155;
+}
+.command-journal-item{
+  position:relative;
+  display:grid;
+  grid-template-columns:54px 30px 1fr;
+  gap:9px;
+  align-items:start;
+  padding:10px 12px;
+  border:1px solid #334155;
+  border-radius:13px;
+  background:#080d15;
+}
+.command-journal-item time{
+  padding-top:4px;
+  color:#cbd5e1;
+  font-weight:900;
+}
+.command-journal-icon{
+  position:relative;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  width:30px;
+  height:30px;
+  border:2px solid #64748b;
+  border-radius:50%;
+  background:#080d15;
+}
+.command-journal-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:9px;
+  margin-bottom:3px;
+}
+.command-journal-meta span{
+  color:#94a3b8;
+  font-size:12px;
+}
+.command-journal-content p{
+  margin:0;
+  white-space:pre-wrap;
+}
+.command-journal-content small{
+  display:block;
+  margin-top:5px;
+  color:#cbd5e1;
+}
+.command-journal-item.level-attention{
+  border-color:#eab308;
+}
+.command-journal-item.level-attention .command-journal-icon{
+  border-color:#eab308;
+}
+.command-journal-item.level-important{
+  border-color:#f97316;
+  background:#241005;
+}
+.command-journal-item.level-important .command-journal-icon{
+  border-color:#f97316;
+}
+.command-journal-item.level-critical{
+  border-color:#ef4444;
+  background:#260b0f;
+}
+.command-journal-item.level-critical .command-journal-icon{
+  border-color:#ef4444;
+}
+@media(max-width:900px){
+  .command-journal-add{
+    grid-template-columns:1fr 1fr;
+  }
+  .command-journal-add input:nth-of-type(2){
+    grid-column:1/-1;
+  }
+  .command-journal-add button{
+    grid-column:1/-1;
+  }
+}
+@media(max-width:560px){
+  .command-journal-add{
+    grid-template-columns:1fr;
+  }
+  .command-journal-add input:nth-of-type(2),
+  .command-journal-add button{
+    grid-column:auto;
+  }
+  .command-journal-timeline:before{
+    left:56px;
+  }
+  .command-journal-item{
+    grid-template-columns:43px 28px 1fr;
+    padding:9px;
+  }
+}

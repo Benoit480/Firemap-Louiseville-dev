@@ -200,7 +200,41 @@
               <div id="commandPreventionPhotos" class="command-prevention-photo-grid"></div>
             </section>
           </div>
-        </div><div id="commandPanelJournal" class="command-panel hidden"><div class="command-journal-add"><input id="commandJournalText" placeholder="Ajouter une note…"><button id="commandJournalAdd" class="primary">Ajouter</button></div><div id="commandJournalList"></div></div>
+        </div><div id="commandPanelJournal" class="command-panel hidden">
+          <section class="command-journal-toolbar">
+            <div class="command-journal-add">
+              <select id="commandJournalCategory">
+                <option value="command">Note du chef</option>
+                <option value="strategy">Changement de stratégie</option>
+                <option value="radio">Message radio</option>
+                <option value="safety">Sécurité</option>
+                <option value="victim">Victime</option>
+                <option value="utility">Service externe</option>
+                <option value="other">Autre</option>
+              </select>
+              <select id="commandJournalLevel">
+                <option value="info">Information</option>
+                <option value="attention">Attention</option>
+                <option value="important">Important</option>
+                <option value="critical">Critique</option>
+              </select>
+              <input id="commandJournalAuthor" placeholder="Auteur (optionnel)">
+              <input id="commandJournalText" placeholder="Ajouter une entrée au journal…">
+              <button id="commandJournalAdd" class="primary">Ajouter</button>
+            </div>
+            <div class="command-journal-filters">
+              <button class="active" data-journal-filter="all">Tout</button>
+              <button data-journal-filter="vehicle">Véhicules</button>
+              <button data-journal-filter="water">Alimentation</button>
+              <button data-journal-filter="outlet">Sorties</button>
+              <button data-journal-filter="pressure">Pressions</button>
+              <button data-journal-filter="command">Notes du chef</button>
+              <button data-journal-filter="critical">Critiques</button>
+            </div>
+          </section>
+          <div id="commandJournalSummary" class="command-journal-summary"></div>
+          <div id="commandJournalList" class="command-journal-timeline"></div>
+        </div>
         <div id="commandPanelEvent" class="command-panel hidden"><div class="card-item"><p id="commandEventMeta"></p><button id="editCommandEvent" class="secondary">Modifier</button> <button id="endCommandEvent" class="danger">Terminer l’événement</button></div></div>
       </div>
     </section>
