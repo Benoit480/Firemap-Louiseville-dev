@@ -56,16 +56,33 @@
     const m = statusMeta(v.status);
     return L.divIcon({ className: "", html: `<div class="vehicle-marker ${v.sharing ? "live" : ""}" style="--status:${m.color}"><div class="vehicle-marker-body">${esc(v.icon)}</div><div class="vehicle-marker-label">${esc(v.number)}</div></div>`, iconSize: [44, 57], iconAnchor: [22, 39], popupAnchor: [0, -38] });
   }
+  function gpsAgeSeconds(vehicle){
+    const timestamp=Date.parse(vehicle?.gpsUpdatedAt||vehicle?.updatedAt||"");
+    return Number.isFinite(timestamp)?Math.max(0,Math.floor((Date.now()-timestamp)/1000)):Infinity;
+  }
+  function gpsFreshness(vehicle){
+    if(!vehicle?.sharing)return {key:"off",label:"GPS arrêté"};
+    const age=gpsAgeSeconds(vehicle);
+    if(age<=20)return {key:"live",label:"GPS en direct"};
+    if(age<=90)return {key:"delayed",label:`GPS retardé · ${age} s`};
+    return {key:"stale",label:"Position ancienne"};
+  }
+  function visibleMapVehicles(){
+    const account=window.fireMapAccount?.current?.();
+    return window.fireMapAccount?.isChief?.()
+      ? state.vehicles
+      : state.vehicles.filter(vehicle=>String(vehicle.id)===String(account?.id||""));
+  }
   function renderMap() {
     layer.clearLayers(); state.markers.clear();
     const s = state.station;
     L.marker([s.lat, s.lng], { icon: stationIcon(), zIndexOffset: 700 })
       .bindPopup(`<strong>🚒 ${esc(s.name)}</strong><br>${esc(s.address || "Adresse non inscrite")}<br>${s.phone ? `<a href="tel:${esc(s.phone)}">${esc(s.phone)}</a><br>` : ""}<button type="button" data-station-nav>Navigation</button>`)
       .addTo(layer);
-    state.vehicles.map(normalizeVehicle).forEach(v => {
+    visibleMapVehicles().map(normalizeVehicle).forEach(v => {
       const m = statusMeta(v.status);
       const marker = L.marker([v.lat, v.lng], { icon: vehicleIcon(v), zIndexOffset: 600 })
-        .bindPopup(`<strong>${esc(v.icon)} ${esc(v.name)}</strong><br><span style="color:${m.color};font-weight:800">${esc(m.label)}</span><br>${v.crew ? `${esc(v.crew)}<br>` : ""}${v.updatedAtText ? `Mise à jour : ${esc(v.updatedAtText)}<br>` : ""}<button type="button" data-vehicle-edit="${esc(v.id)}">Modifier</button>`)
+        .bindPopup(`<strong>${esc(v.icon)} ${esc(v.name)}</strong><br><span style="color:${m.color};font-weight:800">${esc(m.label)}</span><br>${v.crew ? `${esc(v.crew)}<br>` : ""}${v.sharing?`<strong style="color:#22c55e">● GPS en direct</strong><br>`:"GPS arrêté<br>"}${v.updatedAtText ? `Mise à jour : ${esc(v.updatedAtText)}<br>` : ""}${Number.isFinite(Number(v.accuracy))?`Précision : ±${Math.round(Number(v.accuracy))} m<br>`:""}<button type="button" data-vehicle-edit="${esc(v.id)}">Modifier</button>`)
         .addTo(layer);
       state.markers.set(v.id, marker);
     });
@@ -242,11 +259,19 @@
           <small>${usage?.updatedAtText ? `Dernière fiche : ${esc(usage.updatedAtText)}` : "Aucune fiche d’utilisation enregistrée"}</small>
         </div>
 
+        <div class="vehicle-profile-gps ${gpsFreshness(v).key}">
+          <div><span>📡</span><div><strong>${gpsFreshness(v).label}</strong><small>${v.updatedAtText?`Dernière position : ${esc(v.updatedAtText)}`:"Aucune position transmise"}</small></div></div>
+          <div class="vehicle-profile-gps-data">
+            <span>Précision <strong>${Number.isFinite(Number(v.accuracy))?`±${Math.round(Number(v.accuracy))} m`:'—'}</strong></span>
+            <span>Vitesse <strong>${Number.isFinite(Number(v.speed))?`${Math.round(Number(v.speed)*3.6)} km/h`:'—'}</strong></span>
+          </div>
+        </div>
+
         <div class="vehicle-actions vehicle-profile-actions">
           <button class="primary small" data-vehicle-usage="${esc(v.id)}">${usage ? "Modifier la fiche" : "Créer la fiche"}</button>
           <button class="secondary small" data-vehicle-show="${esc(v.id)}">Carte</button>
           <button class="secondary small" data-vehicle-edit="${esc(v.id)}">Profil unité</button>
-          <button class="${sharing ? "danger" : "secondary"} small" data-vehicle-share="${esc(v.id)}">${sharing ? "Arrêter GPS" : "Partager GPS"}</button>
+          ${String(window.fireMapAccount?.current?.()?.id||"")===String(v.id)?`<button class="${sharing ? "danger" : "secondary"} small" data-vehicle-share="${esc(v.id)}">${sharing ? "Arrêter le GPS" : "Activer le GPS en direct"}</button>`:""}
         </div>
       </article>`;
     }).join("");
@@ -288,17 +313,21 @@
     try { if (window.fireMapCloud?.configured) { await window.fireMapCloud.saveStation(state.station); for (const v of state.vehicles.filter(v => v.status === "station")) await window.fireMapCloud.saveVehicle(v); } core.toast("Caserne enregistrée."); } catch (err) { console.error(err); core.toast("Caserne enregistrée localement."); }
   }
   async function pushPosition(v, coords) {
-    Object.assign(v, { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy, speed: coords.speed || 0, heading: coords.heading, sharing: true, status: v.status === "station" ? "enroute" : v.status, updatedAtText: new Date().toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) });
+    const now=new Date();
+    Object.assign(v, { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy, speed: coords.speed || 0, heading: coords.heading, sharing: true, gpsAccountId:String(window.fireMapAccount?.current?.()?.id||v.id), gpsUpdatedAt:now.toISOString(), status: v.status === "station" ? "enroute" : v.status, updatedAtText: now.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) });
     saveLocal(); renderList();
     try { if (window.fireMapCloud?.configured) await window.fireMapCloud.saveVehicle(v); } catch (err) { console.error(err); }
   }
   async function stopSharing(silent = false) {
     if (state.watchId != null) navigator.geolocation.clearWatch(state.watchId);
     const id = state.sharingId, v = state.vehicles.find(x => String(x.id) === String(id)); state.watchId = null; state.sharingId = null;
-    if (v) { v.sharing = false; saveLocal(); renderList(); try { if (window.fireMapCloud?.configured) await window.fireMapCloud.saveVehicle(v); } catch (_) {} }
+    if (v) { v.sharing = false; v.gpsStoppedAt=new Date().toISOString(); saveLocal(); renderList(); try { if (window.fireMapCloud?.configured) await window.fireMapCloud.saveVehicle(v); } catch (_) {} }
     if (!silent) core.toast("Partage GPS arrêté.");
   }
   function toggleSharing(id) {
+    const account=window.fireMapAccount?.current?.();
+    if(!account)return core.toast("Choisissez d’abord le compte du véhicule.");
+    if(String(account.id)!==String(id))return core.toast(`Le compte ${account.number} ne peut partager que la position du véhicule ${account.number}.`);
     if (state.sharingId === String(id)) return stopSharing();
     if (!navigator.geolocation) return core.toast("GPS non disponible sur cet appareil.");
     if (state.sharingId) stopSharing(true);
@@ -354,7 +383,10 @@
   saveLocal(); renderList();
   window.addEventListener("firemap:vehicle-usages-ready", renderList);
   window.addEventListener("firemap:vehicle-usage-updated", renderList);
-  window.addEventListener("firemap:account-changed", renderList);
+  window.addEventListener("firemap:account-changed",event=>{
+    if(state.sharingId&&String(event.detail?.id||"")!==String(state.sharingId))stopSharing(true);
+    renderList();
+  });
   window.addEventListener("storage", e => {
     if (!e.key || e.key === "firemap-vehicle-usages-v2") renderList();
   });
@@ -365,6 +397,8 @@
     getStation: () => state.station,
     showStation,
     showVehicle: showOnMap,
-    refreshProfiles: renderList
+    refreshProfiles: renderList,
+    gpsFreshness,
+    gpsAgeSeconds
   };
 })();

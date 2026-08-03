@@ -1274,3 +1274,14 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
 .vehicle-account-help{margin:13px 0 0;color:#cbd5e1;text-align:center}
 body[data-account-role="unit"] #editStation,body[data-account-role="unit"] [data-vehicle-share]{display:none!important}
 @media(max-width:680px){.vehicle-account-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.vehicle-account-selected{grid-template-columns:1fr}.vehicle-account-selected button{width:100%}.account-badge small{display:none}}
+
+/* FireMap V22.3.0 — GPS en direct par véhicule */
+.vehicle-profile-gps{margin-top:10px;padding:11px;border:1px solid #334155;border-radius:12px;background:#0b1220}
+.vehicle-profile-gps>div:first-child{display:flex;gap:9px;align-items:center}.vehicle-profile-gps>div:first-child>span{font-size:23px}.vehicle-profile-gps>div:first-child>div{display:grid}.vehicle-profile-gps small{color:#94a3b8}
+.vehicle-profile-gps.live{border-color:#22c55e;background:#062015}.vehicle-profile-gps.delayed{border-color:#eab308}.vehicle-profile-gps.stale{border-color:#ef4444;background:#260b0f}
+.vehicle-profile-gps-data{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.vehicle-profile-gps-data span{padding:7px 9px;border-radius:8px;background:#111827;color:#cbd5e1}.vehicle-profile-gps-data strong{display:block;color:#fff}
+.command-gps-head{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:12px;padding:13px;border:1px solid #334155;border-radius:14px;background:#080d15}.command-gps-head h3{margin:2px 0}.command-gps-head p{margin:0;color:#94a3b8}
+.command-gps-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.command-gps-card{padding:13px;border:1px solid #334155;border-radius:14px;background:#080d15}.command-gps-card.live{border-color:#22c55e;background:#062015}.command-gps-card.delayed{border-color:#eab308}.command-gps-card.stale{border-color:#ef4444;background:#260b0f}
+.command-gps-unit{display:flex;gap:10px;align-items:center}.command-gps-unit>span{font-size:29px}.command-gps-unit h3{margin:0}.command-gps-unit strong{color:#cbd5e1}.command-gps-data{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:11px 0}.command-gps-data span{padding:7px;border-radius:8px;background:#111827;color:#94a3b8;font-size:12px}.command-gps-data strong{display:block;color:#fff;font-size:13px}
+body[data-account-role="unit"] [data-vehicle-share]{display:inline-flex!important}
+@media(max-width:760px){.command-gps-head{grid-template-columns:1fr}.command-gps-grid{grid-template-columns:1fr}.command-gps-data{grid-template-columns:1fr}.vehicle-profile-gps-data{grid-template-columns:1fr}}

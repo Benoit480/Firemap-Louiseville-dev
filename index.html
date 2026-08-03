@@ -170,7 +170,7 @@
           <article><strong id="commandOutletCount">0</strong><span>💧 Sorties actives</span></article>
           <article class="residual"><strong id="commandResidualMinimum">—</strong><span>📊 Résiduel minimum</span></article>
         </div>
-        <div class="command-tabs"><button class="active" data-command-tab="vehicles">Véhicules</button><button data-command-tab="outlets">Sorties</button><button data-command-tab="sectors">Secteurs</button><button data-command-tab="prevention">Prévention</button><button data-command-tab="journal">Journal</button><button data-command-tab="event">Événement</button></div>
+        <div class="command-tabs"><button class="active" data-command-tab="vehicles">Véhicules</button><button data-command-tab="outlets">Sorties</button><button data-command-tab="sectors">Secteurs</button><button data-command-tab="gps">GPS</button><button data-command-tab="prevention">Prévention</button><button data-command-tab="journal">Journal</button><button data-command-tab="event">Événement</button></div>
         <div id="commandPanelVehicles" class="command-panel"><div id="commandVehicleList" class="command-vehicle-grid"></div></div>
         <div id="commandPanelOutlets" class="command-panel hidden"><div id="commandOutletList" class="command-outlet-list"></div></div><div id="commandPanelSectors" class="command-panel hidden">
           <div class="command-sector-summary">
@@ -179,7 +179,13 @@
           </div>
           <div id="commandSectorList" class="command-sector-grid"></div>
         </div>
-        <div id="commandPanelPrevention" class="command-panel hidden">
+        <div id="commandPanelGps" class="command-panel hidden">
+          <div class="command-gps-head">
+            <div><small>LOCALISATION DES UNITÉS</small><h3>GPS en direct</h3><p>Les positions proviennent des comptes véhicules qui ont activé leur partage GPS.</p></div>
+            <button id="commandGpsOpenMap" class="primary">🗺️ Ouvrir la carte GPS</button>
+          </div>
+          <div id="commandGpsList" class="command-gps-grid"></div>
+        </div><div id="commandPanelPrevention" class="command-panel hidden">
           <div id="commandPreventionEmpty" class="card-item">
             <strong>Aucune fiche de prévention liée</strong>
             <p>La recherche se fait automatiquement avec l’adresse de l’événement actif.</p>

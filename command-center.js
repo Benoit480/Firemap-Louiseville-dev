@@ -350,7 +350,29 @@ function saveEventInBackground(event){
   saveLocal();
   Promise.resolve(window.fireMapCloud?.saveCommandEvent?.(event)).catch(error=>console.warn("Journal en attente de synchronisation.",error));
 }
-function render(){const e=active();$("commandEmpty").classList.toggle("hidden",!!e);$("commandDashboard").classList.toggle("hidden",!e);if(!e)return;const vehicles=window.fireMapVehicles?.getVehicles?.()||[],map=newestByVehicle(),rows=vehicles.map(v=>({v,u:map.get(String(v.id))})),eng=rows.filter(x=>x.u&&x.u.status!=="station"),out=rows.flatMap(x=>outletRows(x.u));$("commandEventNumber").textContent=`ÉVÉNEMENT ${e.number}`;$("commandEventAddress").textContent=e.address;$("commandEventType").textContent=e.type||"Type non inscrit";$("commandVehicleCount").textContent=eng.length;$("commandOnSceneCount").textContent=rows.filter(x=>state(x.u)[0]==="green").length;$("commandSuppliedCount").textContent=rows.filter(x=>state(x.u)[0]==="blue").length;$("commandFirefighterCount").textContent=rows.reduce((s,x)=>s+Number(x.u?.firefighters||0),0);$("commandOutletCount").textContent=out.length;const residuals=residualValues(rows);$("commandResidualMinimum").textContent=residuals.length?`${Math.min(...residuals)} PSI`:"—";$("commandVehicleList").innerHTML=rows.map(({v,u})=>{const s=state(u);return`<article class="command-vehicle-card ${s[0]}"><span>${s[1]}</span><div><h3>${esc(v.name)}</h3><strong>${s[2]}</strong><p>👨‍🚒 ${Number(u?.firefighters||0)} · 💧 ${outletRows(u).length}</p></div></article>`}).join("");$("commandOutletList").innerHTML=out.length?out.map(o=>`<article class="command-outlet-card"><strong>${esc(o.vehicle)} — ${esc(o.name)}</strong><span>${esc(o.type||"")} · ${o.psi!==""&&o.psi!=null?o.psi:"—"} PSI · ${o.sector?`Secteur ${esc(o.sector)}`:"Secteur non précisé"}</span><p>${esc(o.location||"Affectation non inscrite")}</p></article>`).join(""):'<div class="card-item"><strong>Aucune sortie active</strong></div>';renderSectors(out);renderPrevention(e);const automaticChanged=buildAutomaticJournal(e,rows.map(x=>x.u).filter(Boolean));if(automaticChanged)saveEventInBackground(e);renderJournal(e);$("commandEventMeta").textContent=`Alarme ${e.alarm} · Chef : ${e.chief||"—"} · Début : ${new Date(e.startedAt).toLocaleString("fr-CA")}`;tick()}function tick(){const e=active();if(!e)return;const s=Math.max(0,Math.floor((Date.now()-new Date(e.startedAt))/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;$("commandElapsed").textContent=h?`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`}function tab(name){document.querySelectorAll("[data-command-tab]").forEach(b=>b.classList.toggle("active",b.dataset.commandTab===name));["Vehicles","Outlets","Sectors","Prevention","Journal","Event"].forEach(n=>$("commandPanel"+n).classList.toggle("hidden",n.toLowerCase()!==name))}$("commandOpenPrevention").onclick=()=>{const id=$("commandPreventionContent")?.dataset?.buildingId;if(!id)return I.toast("Aucune fiche de prévention liée.");window.fireMapPrevention?.open?.(id)};
+
+function gpsPositionState(vehicle){
+  if(!vehicle?.sharing)return {key:"off",label:"GPS arrêté"};
+  const stamp=Date.parse(vehicle.gpsUpdatedAt||vehicle.updatedAt||"");
+  const age=Number.isFinite(stamp)?Math.max(0,Math.floor((Date.now()-stamp)/1000)):Infinity;
+  if(age<=20)return {key:"live",label:"En direct"};
+  if(age<=90)return {key:"delayed",label:`Retard ${age} s`};
+  return {key:"stale",label:"Position ancienne"};
+}
+function renderGpsVehicles(vehicles){
+  const box=$("commandGpsList");if(!box)return;
+  box.innerHTML=vehicles.map(v=>{
+    const gps=gpsPositionState(v);
+    const speed=Number.isFinite(Number(v.speed))?Math.round(Number(v.speed)*3.6):null;
+    const accuracy=Number.isFinite(Number(v.accuracy))?Math.round(Number(v.accuracy)):null;
+    return `<article class="command-gps-card ${gps.key}">
+      <div class="command-gps-unit"><span>${esc(v.icon||"🚒")}</span><div><h3>${esc(v.name)}</h3><strong>${gps.label}</strong></div></div>
+      <div class="command-gps-data"><span>Dernière position <strong>${esc(v.updatedAtText||"Jamais")}</strong></span><span>Précision <strong>${accuracy!=null?`±${accuracy} m`:"—"}</strong></span><span>Vitesse <strong>${speed!=null?`${speed} km/h`:"—"}</strong></span></div>
+      <button class="secondary" data-command-gps-vehicle="${esc(v.id)}" ${Number.isFinite(Number(v.lat))&&Number.isFinite(Number(v.lng))?"":"disabled"}>Voir sur la carte</button>
+    </article>`;
+  }).join("");
+}
+function render(){const e=active();$("commandEmpty").classList.toggle("hidden",!!e);$("commandDashboard").classList.toggle("hidden",!e);if(!e)return;const vehicles=window.fireMapVehicles?.getVehicles?.()||[],map=newestByVehicle(),rows=vehicles.map(v=>({v,u:map.get(String(v.id))})),eng=rows.filter(x=>x.u&&x.u.status!=="station"),out=rows.flatMap(x=>outletRows(x.u));$("commandEventNumber").textContent=`ÉVÉNEMENT ${e.number}`;$("commandEventAddress").textContent=e.address;$("commandEventType").textContent=e.type||"Type non inscrit";$("commandVehicleCount").textContent=eng.length;$("commandOnSceneCount").textContent=rows.filter(x=>state(x.u)[0]==="green").length;$("commandSuppliedCount").textContent=rows.filter(x=>state(x.u)[0]==="blue").length;$("commandFirefighterCount").textContent=rows.reduce((s,x)=>s+Number(x.u?.firefighters||0),0);$("commandOutletCount").textContent=out.length;const residuals=residualValues(rows);$("commandResidualMinimum").textContent=residuals.length?`${Math.min(...residuals)} PSI`:"—";$("commandVehicleList").innerHTML=rows.map(({v,u})=>{const s=state(u);return`<article class="command-vehicle-card ${s[0]}"><span>${s[1]}</span><div><h3>${esc(v.name)}</h3><strong>${s[2]}</strong><p>👨‍🚒 ${Number(u?.firefighters||0)} · 💧 ${outletRows(u).length}</p></div></article>`}).join("");renderGpsVehicles(vehicles);$("commandOutletList").innerHTML=out.length?out.map(o=>`<article class="command-outlet-card"><strong>${esc(o.vehicle)} — ${esc(o.name)}</strong><span>${esc(o.type||"")} · ${o.psi!==""&&o.psi!=null?o.psi:"—"} PSI · ${o.sector?`Secteur ${esc(o.sector)}`:"Secteur non précisé"}</span><p>${esc(o.location||"Affectation non inscrite")}</p></article>`).join(""):'<div class="card-item"><strong>Aucune sortie active</strong></div>';renderSectors(out);renderPrevention(e);const automaticChanged=buildAutomaticJournal(e,rows.map(x=>x.u).filter(Boolean));if(automaticChanged)saveEventInBackground(e);renderJournal(e);$("commandEventMeta").textContent=`Alarme ${e.alarm} · Chef : ${e.chief||"—"} · Début : ${new Date(e.startedAt).toLocaleString("fr-CA")}`;tick()}function tick(){const e=active();if(!e)return;const s=Math.max(0,Math.floor((Date.now()-new Date(e.startedAt))/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;$("commandElapsed").textContent=h?`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`}function tab(name){document.querySelectorAll("[data-command-tab]").forEach(b=>b.classList.toggle("active",b.dataset.commandTab===name));["Vehicles","Outlets","Sectors","Gps","Prevention","Journal","Event"].forEach(n=>$("commandPanel"+n).classList.toggle("hidden",n.toLowerCase()!==name))}$("commandOpenPrevention").onclick=()=>{const id=$("commandPreventionContent")?.dataset?.buildingId;if(!id)return I.toast("Aucune fiche de prévention liée.");window.fireMapPrevention?.open?.(id)};
 $("commandShowPreventionMap").onclick=()=>{const id=$("commandPreventionContent")?.dataset?.buildingId;if(!id)return I.toast("Aucun bâtiment lié.");window.fireMapPreplans?.showBuildingOnMap?.(id)};
 window.addEventListener("firemap:prevention-updated",()=>renderPrevention(active()));
 window.addEventListener("firemap:buildings-updated",()=>renderPrevention(active()));
@@ -395,7 +417,13 @@ document.addEventListener("click",event=>{
   window.addEventListener("firemap:account-changed",()=>{
     if(!window.fireMapAccount?.canAccessCommand?.()&&document.querySelector("#view-command.active"))I.showView("vehicles");
   });
-  events=read(EC,[]);
+  $("commandGpsOpenMap")?.addEventListener("click",()=>I.showView("map"));
+document.addEventListener("click",event=>{
+  const target=event.target.closest("[data-command-gps-vehicle]");
+  if(!target)return;
+  window.fireMapVehicles?.showVehicle?.(target.dataset.commandGpsVehicle);
+});
+events=read(EC,[]);
   render();
   timer=setInterval(tick,1000);
   window.addEventListener("storage",render);
