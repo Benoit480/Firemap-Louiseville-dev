@@ -100,7 +100,23 @@ fillVehicleOptions();const u=item?canonical(item):ensureEventLink(canonical({}))
     }
   }
 
-  async function save(e){
+  function syncVehicleUsageInBackground(u){
+    const cloud=window.fireMapCloud;
+    if(!cloud?.configured||typeof cloud.saveVehicleUsage!=="function")return;
+
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Délai Firebase dépassé")),8000));
+    Promise.race([cloud.saveVehicleUsage(u),timeout])
+      .then(()=>{
+        clearPending(u.id);
+        core.toast("Fiche véhicule synchronisée.");
+      })
+      .catch(err=>{
+        console.warn("Synchronisation Firebase en attente.",err);
+        // La fiche demeure dans PENDING et sera renvoyée plus tard.
+      });
+  }
+
+  function save(e){
     e?.preventDefault?.();
     e?.stopPropagation?.();
 
@@ -138,41 +154,33 @@ fillVehicleOptions();const u=item?canonical(item):ensureEventLink(canonical({}))
       if(i>=0)usages[i]=u;
       else usages.push(u);
 
+      // Sauvegarde locale immédiate et vérifiée.
       localStorage.setItem(CACHE,JSON.stringify(usages));
       queue(u);
-
-      if(!verifyLocalSave(u.id)){
-        throw new Error("La fiche n’a pas pu être vérifiée dans le téléphone.");
-      }
+      if(!verifyLocalSave(u.id))throw new Error("La fiche n’a pas pu être vérifiée dans le téléphone.");
 
       render();
       window.dispatchEvent(new CustomEvent("firemap:vehicle-usages-ready"));
-      window.dispatchEvent(new CustomEvent("firemap:vehicle-usage-updated",{
-        detail:{eventId:u.eventId,usage:u}
-      }));
+      window.dispatchEvent(new CustomEvent("firemap:vehicle-usage-updated",{detail:{eventId:u.eventId,usage:u}}));
       window.fireMapVehicles?.refreshProfiles?.();
 
       setSaveStatus("✅ Fiche enregistrée sur le téléphone.","success");
       core.toast("Fiche véhicule enregistrée.");
 
-      setTimeout(()=>$("vehicleUsageDialog")?.close(),500);
-
-      const cloud=window.fireMapCloud;
-      if(cloud?.configured&&typeof cloud.saveVehicleUsage==="function"){
-        try{
-          await cloud.saveVehicleUsage(u);
-          clearPending(u.id);
-          core.toast("Fiche véhicule synchronisée.");
-        }catch(err){
-          console.warn("Synchronisation Firebase en attente.",err);
-          setSaveStatus("✅ Enregistrée localement — synchronisation en attente.","warning");
-        }
+      // Réactiver le bouton AVANT Firebase.
+      if(button){
+        button.dataset.saving="false";
+        button.disabled=false;
+        button.textContent="Enregistrer la fiche";
       }
+
+      // Fermer tout de suite; Firebase ne peut plus bloquer l’interface.
+      setTimeout(()=>$("vehicleUsageDialog")?.close(),300);
+      syncVehicleUsageInBackground(u);
     }catch(err){
       console.error("Erreur d’enregistrement de la fiche véhicule.",err);
       setSaveStatus(`❌ ${err?.message||"Erreur pendant l’enregistrement."}`,"error");
       core.toast(err?.message||"Erreur pendant l’enregistrement.");
-    }finally{
       if(button){
         button.dataset.saving="false";
         button.disabled=false;
