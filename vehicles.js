@@ -199,10 +199,16 @@
     return rows.length ? `<ul class="vehicle-profile-outlets">${rows.join("")}</ul>` : '<p class="vehicle-profile-empty">Aucune sortie en service</p>';
   }
   function renderList() {
-    $("stationNameDisplay").textContent = state.station.name;
+    const activeAccount=window.fireMapAccount?.current?.();
+    $("stationNameDisplay").textContent=window.fireMapAccount?.isChief?.()
+      ? state.station.name
+      : `${activeAccount?.icon||"🚒"} Compte ${activeAccount?.number||""} — ${activeAccount?.name||"Unité"}`;
     $("stationAddressDisplay").textContent = state.station.address || "Adresse non inscrite";
     const box = $("vehicleList");
-    box.innerHTML = state.vehicles.map(normalizeVehicle).map(v => {
+    const visibleVehicles=window.fireMapAccount?.isChief?.()
+      ? state.vehicles
+      : state.vehicles.filter(v=>String(v.id)===String(activeAccount?.id||""));
+    box.innerHTML = visibleVehicles.map(normalizeVehicle).map(v => {
       const usage = latestUsage(v.id);
       const operational = usageState(usage, v);
       const sharing = state.sharingId === v.id;
@@ -321,10 +327,17 @@
 
   document.addEventListener("click", e => {
     const show = e.target.closest("[data-vehicle-show]"); if (show) showOnMap(show.dataset.vehicleShow);
-    const edit = e.target.closest("[data-vehicle-edit]"); if (edit) openVehicle(edit.dataset.vehicleEdit);
+    const edit=e.target.closest("[data-vehicle-edit]");
+    if(edit){
+      if(!window.fireMapAccount?.isOwnVehicle?.(edit.dataset.vehicleEdit))return core.toast("Ce compte n’est pas lié à ce véhicule.");
+      openVehicle(edit.dataset.vehicleEdit);
+    }
     const share = e.target.closest("[data-vehicle-share]"); if (share) toggleSharing(share.dataset.vehicleShare);
     const usageButton = e.target.closest("[data-vehicle-usage]");
-    if (usageButton) window.fireMapVehicleUsage?.openForVehicle?.(usageButton.dataset.vehicleUsage);
+    if(usageButton){
+      if(!window.fireMapAccount?.isOwnVehicle?.(usageButton.dataset.vehicleUsage))return core.toast("Ce compte n’est pas lié à ce véhicule.");
+      window.fireMapVehicleUsage?.openForVehicle?.(usageButton.dataset.vehicleUsage);
+    }
     if (e.target.closest("[data-station-nav]")) location.href = core.navUrl(state.station.lat, state.station.lng);
   });
   $("vehiclesBackMap").onclick = () => core.showView("map");
@@ -341,6 +354,7 @@
   saveLocal(); renderList();
   window.addEventListener("firemap:vehicle-usages-ready", renderList);
   window.addEventListener("firemap:vehicle-usage-updated", renderList);
+  window.addEventListener("firemap:account-changed", renderList);
   window.addEventListener("storage", e => {
     if (!e.key || e.key === "firemap-vehicle-usages-v2") renderList();
   });

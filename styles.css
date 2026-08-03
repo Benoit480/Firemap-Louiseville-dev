@@ -1257,3 +1257,20 @@ h1,h2,h3,h4,strong,label,.section-title h2{color:#f8fafc}
     padding:9px;
   }
 }
+
+/* FireMap V22.2.0 — comptes par véhicule */
+.account-badge{display:flex;align-items:center;gap:7px;min-height:42px;padding:5px 9px;border:1px solid #334155;border-radius:11px;background:#0b1220;color:#fff}
+.account-badge>span:first-child{font-size:21px}.account-badge>span:last-child{display:grid;text-align:left;line-height:1.05}.account-badge strong{font-size:14px}.account-badge small{color:#94a3b8;font-size:10px}
+.vehicle-account-dialog{width:min(760px,96vw);max-height:92vh;padding:0;border:1px solid #334155;border-radius:19px;background:#05080e;color:#fff}
+.vehicle-account-dialog::backdrop{background:rgba(0,0,0,.88);backdrop-filter:blur(5px)}
+.vehicle-account-dialog form{padding:18px}.vehicle-account-brand{display:grid;justify-items:center;text-align:center;margin-bottom:15px}.vehicle-account-brand>span{font-size:48px}.vehicle-account-brand h2{margin:4px 0}.vehicle-account-brand p{margin:0;color:#94a3b8}
+.vehicle-account-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.vehicle-account-card{display:grid;justify-items:center;gap:5px;min-height:145px;padding:12px 8px;border:1px solid #334155;border-radius:14px;background:#0b1220;color:#fff;text-align:center}
+.vehicle-account-card.selected{border-color:#22c55e;background:#062015;box-shadow:0 0 0 2px rgba(34,197,94,.16)}
+.vehicle-account-card.chief{border-color:#ef4444}.vehicle-account-card.chief.selected{background:#260b0f}
+.vehicle-account-icon{font-size:34px}.vehicle-account-card small{color:#cbd5e1}.vehicle-account-card em{color:#94a3b8;font-size:11px;font-style:normal}
+.vehicle-account-selected{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:13px;padding:12px;border:1px solid #334155;border-radius:14px;background:#080d15}
+.vehicle-account-selected>div{display:flex;gap:10px;align-items:center}.vehicle-account-selected>div>span{font-size:31px}.vehicle-account-selected>div>div{display:grid}.vehicle-account-selected>div>div span,.vehicle-account-selected small{color:#94a3b8}
+.vehicle-account-help{margin:13px 0 0;color:#cbd5e1;text-align:center}
+body[data-account-role="unit"] #editStation,body[data-account-role="unit"] [data-vehicle-share]{display:none!important}
+@media(max-width:680px){.vehicle-account-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.vehicle-account-selected{grid-template-columns:1fr}.vehicle-account-selected button{width:100%}.account-badge small{display:none}}

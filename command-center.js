@@ -382,9 +382,19 @@ document.addEventListener("click",event=>{
 });$("endCommandEvent").onclick=()=>{const e=active();if(!e||!confirm("Terminer cet événement?"))return;e.status="closed";addJournal(e,"Intervention terminée",{category:"system",level:"important"});saveEventInBackground(e);activeId="";localStorage.removeItem(AC);render()};window.addEventListener("firemap:call-active",e=>createEventFromActiveCall(e.detail||{}));
   window.fireMapCommandCenter={
     createFromActiveCall:createEventFromActiveCall,
-    open:()=>I.showView("command"),
+    open:()=>{if(!window.fireMapAccount?.canAccessCommand?.())return I.toast("Le Centre de commandement est réservé au compte 102.");I.showView("command")},
     getActiveEvent:active
   };
+  document.addEventListener("click",event=>{
+    const link=event.target.closest('[data-view="command"]');
+    if(link&&!window.fireMapAccount?.canAccessCommand?.()){
+      event.preventDefault();event.stopImmediatePropagation();
+      I.toast("Le Centre de commandement est réservé au compte 102.");
+    }
+  },true);
+  window.addEventListener("firemap:account-changed",()=>{
+    if(!window.fireMapAccount?.canAccessCommand?.()&&document.querySelector("#view-command.active"))I.showView("vehicles");
+  });
   events=read(EC,[]);
   render();
   timer=setInterval(tick,1000);

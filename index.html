@@ -17,6 +17,10 @@
   <header class="topbar">
     <button id="menuBtn" class="header-btn" aria-label="Ouvrir le menu">☰</button>
     <div><div class="eyebrow">SERVICE INCENDIE</div><h1>FireMap Louiseville</h1></div>
+    <button id="accountBadge" class="account-badge hidden" type="button" aria-label="Compte actif">
+      <span id="accountBadgeIcon">🚒</span>
+      <span><strong id="accountBadgeNumber">—</strong><small id="accountBadgeRole">Compte</small></span>
+    </button>
     <button id="locateBtn" class="header-btn" aria-label="Ma position">⌖</button>
   </header>
 
@@ -32,6 +36,7 @@
     <button data-view="command" class="drawer-link">🚨 Centre de commandement</button>
     <button data-view="inspections" class="drawer-link">✅ Inspections</button>
     <button data-view="search" class="drawer-link">🔎 Recherche d’adresse</button>
+    <button id="switchVehicleAccount" class="drawer-link hidden">👤 Changer de compte</button>
     <div class="drawer-separator"></div>
     <div class="sync-box"><span id="syncDot"></span><div><strong id="syncTitle">Connexion…</strong><small id="syncText">Vérification Firebase</small></div></div>
     <button id="installBtn" class="drawer-link hidden">📲 Installer l’application</button>
@@ -302,7 +307,28 @@
     </form>
   </dialog>
 
-  <dialog id="buildingDialog" class="building-dialog">
+  
+  <dialog id="vehicleAccountDialog" class="vehicle-account-dialog">
+    <form id="vehicleAccountForm">
+      <div class="vehicle-account-brand">
+        <span>🚒</span><small>FIREMAP LOUISEVILLE</small>
+        <h2>Choisir le compte de l’unité</h2>
+        <p>Chaque compte est automatiquement lié à son véhicule.</p>
+      </div>
+      <div id="vehicleAccountGrid" class="vehicle-account-grid"></div>
+      <div class="vehicle-account-selected hidden" id="vehicleAccountSelected">
+        <div>
+          <span id="vehicleAccountSelectedIcon">🚒</span>
+          <div><small>COMPTE SÉLECTIONNÉ</small><strong id="vehicleAccountSelectedName">—</strong><span id="vehicleAccountSelectedRole">—</span></div>
+        </div>
+        <button type="submit" class="primary">Ouvrir ce compte</button>
+        <button type="button" id="vehicleAccountCancel" class="secondary hidden">Annuler</button>
+      </div>
+      <p class="vehicle-account-help">Le compte <strong>102</strong> est celui du chef et possède l’accès au Centre de commandement.</p>
+    </form>
+  </dialog>
+
+<dialog id="buildingDialog" class="building-dialog">
     <form id="buildingForm" method="dialog">
       <div class="modal-head"><div><small>BÂTIMENT À RISQUE</small><h2 id="buildingModalTitle">Ajouter un bâtiment</h2></div><button type="button" id="closeBuildingModal">×</button></div>
       <input type="hidden" id="buildingId">
@@ -586,6 +612,7 @@
   <script src="prevention.js"></script>
   <script src="assistant.js"></script>
   <script src="navigation.js"></script>
+  <script src="vehicle-accounts.js"></script>
   <script src="vehicles.js"></script>
   <script src="vehicle-usage.js"></script>
   <script src="command-center.js"></script>
