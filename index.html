@@ -163,10 +163,17 @@
           <article class="blue"><strong id="commandSuppliedCount">0</strong><span>🔵 Alimentés</span></article>
           <article><strong id="commandFirefighterCount">0</strong><span>👨‍🚒 Pompiers</span></article>
           <article><strong id="commandOutletCount">0</strong><span>💧 Sorties actives</span></article>
+          <article class="residual"><strong id="commandResidualMinimum">—</strong><span>📊 Résiduel minimum</span></article>
         </div>
-        <div class="command-tabs"><button class="active" data-command-tab="vehicles">Véhicules</button><button data-command-tab="outlets">Sorties</button><button data-command-tab="prevention">Prévention</button><button data-command-tab="journal">Journal</button><button data-command-tab="event">Événement</button></div>
+        <div class="command-tabs"><button class="active" data-command-tab="vehicles">Véhicules</button><button data-command-tab="outlets">Sorties</button><button data-command-tab="sectors">Secteurs</button><button data-command-tab="prevention">Prévention</button><button data-command-tab="journal">Journal</button><button data-command-tab="event">Événement</button></div>
         <div id="commandPanelVehicles" class="command-panel"><div id="commandVehicleList" class="command-vehicle-grid"></div></div>
-        <div id="commandPanelOutlets" class="command-panel hidden"><div id="commandOutletList" class="command-outlet-list"></div></div>
+        <div id="commandPanelOutlets" class="command-panel hidden"><div id="commandOutletList" class="command-outlet-list"></div></div><div id="commandPanelSectors" class="command-panel hidden">
+          <div class="command-sector-summary">
+            <div><strong id="commandActiveSectorCount">0</strong><span>Secteurs actifs</span></div>
+            <p>Regroupement automatique selon le secteur choisi dans chaque sortie.</p>
+          </div>
+          <div id="commandSectorList" class="command-sector-grid"></div>
+        </div>
         <div id="commandPanelPrevention" class="command-panel hidden">
           <div id="commandPreventionEmpty" class="card-item">
             <strong>Aucune fiche de prévention liée</strong>

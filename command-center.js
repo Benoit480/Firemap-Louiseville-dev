@@ -78,7 +78,56 @@ function active(){return events.find(e=>e.id===activeId&&e.status!=="closed")||n
     }
   }
 
-  function render(){const e=active();$("commandEmpty").classList.toggle("hidden",!!e);$("commandDashboard").classList.toggle("hidden",!e);if(!e)return;const vehicles=window.fireMapVehicles?.getVehicles?.()||[],map=newestByVehicle(),rows=vehicles.map(v=>({v,u:map.get(String(v.id))})),eng=rows.filter(x=>x.u&&x.u.status!=="station"),out=rows.flatMap(x=>outletRows(x.u));$("commandEventNumber").textContent=`ÉVÉNEMENT ${e.number}`;$("commandEventAddress").textContent=e.address;$("commandEventType").textContent=e.type||"Type non inscrit";$("commandVehicleCount").textContent=eng.length;$("commandOnSceneCount").textContent=rows.filter(x=>state(x.u)[0]==="green").length;$("commandSuppliedCount").textContent=rows.filter(x=>state(x.u)[0]==="blue").length;$("commandFirefighterCount").textContent=rows.reduce((s,x)=>s+Number(x.u?.firefighters||0),0);$("commandOutletCount").textContent=out.length;$("commandVehicleList").innerHTML=rows.map(({v,u})=>{const s=state(u);return`<article class="command-vehicle-card ${s[0]}"><span>${s[1]}</span><div><h3>${esc(v.name)}</h3><strong>${s[2]}</strong><p>👨‍🚒 ${Number(u?.firefighters||0)} · 💧 ${outletRows(u).length}</p></div></article>`}).join("");$("commandOutletList").innerHTML=out.length?out.map(o=>`<article class="command-outlet-card"><strong>${esc(o.vehicle)} — ${esc(o.name)}</strong><span>${esc(o.type||"")} · ${o.psi!==""&&o.psi!=null?o.psi:"—"} PSI · ${o.sector?`Secteur ${esc(o.sector)}`:"Secteur non précisé"}</span><p>${esc(o.location||"Affectation non inscrite")}</p></article>`).join(""):'<div class="card-item"><strong>Aucune sortie active</strong></div>';renderPrevention(e);$("commandJournalList").innerHTML=(e.journal||[]).map(j=>`<article class="command-journal-item"><time>${esc(j.time)}</time><p>${esc(j.message)}</p></article>`).join("")||'<div class="card-item"><strong>Journal vide</strong></div>';$("commandEventMeta").textContent=`Alarme ${e.alarm} · Chef : ${e.chief||"—"} · Début : ${new Date(e.startedAt).toLocaleString("fr-CA")}`;tick()}function tick(){const e=active();if(!e)return;const s=Math.max(0,Math.floor((Date.now()-new Date(e.startedAt))/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;$("commandElapsed").textContent=h?`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`}function tab(name){document.querySelectorAll("[data-command-tab]").forEach(b=>b.classList.toggle("active",b.dataset.commandTab===name));["Vehicles","Outlets","Prevention","Journal","Event"].forEach(n=>$("commandPanel"+n).classList.toggle("hidden",n.toLowerCase()!==name))}$("commandOpenPrevention").onclick=()=>{const id=$("commandPreventionContent")?.dataset?.buildingId;if(!id)return I.toast("Aucune fiche de prévention liée.");window.fireMapPrevention?.open?.(id)};
+  
+function residualValues(rows){
+  const values=[];
+  rows.forEach(({u})=>{
+    [u?.residualStart,u?.residualEnd].forEach(value=>{
+      if(value===""||value==null)return;
+      const number=Number(value);
+      if(Number.isFinite(number))values.push(number);
+    });
+  });
+  return values;
+}
+function sectorGroups(outlets){
+  const groups=new Map();
+  outlets.forEach(outlet=>{
+    const sector=String(outlet.sector||"").trim();
+    if(!sector)return;
+    if(!groups.has(sector))groups.set(sector,{sector,outlets:[],vehicles:new Set()});
+    const group=groups.get(sector);
+    group.outlets.push(outlet);
+    if(outlet.vehicle)group.vehicles.add(outlet.vehicle);
+  });
+  return [...groups.values()].sort((a,b)=>Number(a.sector)-Number(b.sector));
+}
+function renderSectors(outlets){
+  const groups=sectorGroups(outlets);
+  $("commandActiveSectorCount").textContent=groups.length;
+  $("commandSectorList").innerHTML=groups.length?groups.map(group=>{
+    const psi=group.outlets
+      .map(outlet=>Number(outlet.psi))
+      .filter(Number.isFinite);
+    const average=psi.length?Math.round(psi.reduce((sum,value)=>sum+value,0)/psi.length):null;
+    return `<article class="command-sector-card">
+      <div class="command-sector-title">
+        <span>📍</span>
+        <div><small>SECTEUR</small><h3>Secteur ${esc(group.sector)}</h3></div>
+      </div>
+      <div class="command-sector-stats">
+        <span><strong>${group.vehicles.size}</strong> véhicule${group.vehicles.size>1?"s":""}</span>
+        <span><strong>${group.outlets.length}</strong> sortie${group.outlets.length>1?"s":""}</span>
+        <span><strong>${average!=null?`${average} PSI`:"—"}</strong> pression moyenne</span>
+      </div>
+      <ul>${group.outlets.map(outlet=>`<li>
+        <strong>${esc(outlet.vehicle)} — ${esc(outlet.name)}</strong>
+        <span>${outlet.psi!==""&&outlet.psi!=null?`${esc(outlet.psi)} PSI`:"Pression non inscrite"}${outlet.location?` · ${esc(outlet.location)}`:""}</span>
+      </li>`).join("")}</ul>
+    </article>`;
+  }).join(""):'<div class="card-item"><strong>Aucun secteur actif</strong><p>Choisissez un secteur dans une sortie active pour l’afficher ici.</p></div>';
+}
+function render(){const e=active();$("commandEmpty").classList.toggle("hidden",!!e);$("commandDashboard").classList.toggle("hidden",!e);if(!e)return;const vehicles=window.fireMapVehicles?.getVehicles?.()||[],map=newestByVehicle(),rows=vehicles.map(v=>({v,u:map.get(String(v.id))})),eng=rows.filter(x=>x.u&&x.u.status!=="station"),out=rows.flatMap(x=>outletRows(x.u));$("commandEventNumber").textContent=`ÉVÉNEMENT ${e.number}`;$("commandEventAddress").textContent=e.address;$("commandEventType").textContent=e.type||"Type non inscrit";$("commandVehicleCount").textContent=eng.length;$("commandOnSceneCount").textContent=rows.filter(x=>state(x.u)[0]==="green").length;$("commandSuppliedCount").textContent=rows.filter(x=>state(x.u)[0]==="blue").length;$("commandFirefighterCount").textContent=rows.reduce((s,x)=>s+Number(x.u?.firefighters||0),0);$("commandOutletCount").textContent=out.length;const residuals=residualValues(rows);$("commandResidualMinimum").textContent=residuals.length?`${Math.min(...residuals)} PSI`:"—";$("commandVehicleList").innerHTML=rows.map(({v,u})=>{const s=state(u);return`<article class="command-vehicle-card ${s[0]}"><span>${s[1]}</span><div><h3>${esc(v.name)}</h3><strong>${s[2]}</strong><p>👨‍🚒 ${Number(u?.firefighters||0)} · 💧 ${outletRows(u).length}</p></div></article>`}).join("");$("commandOutletList").innerHTML=out.length?out.map(o=>`<article class="command-outlet-card"><strong>${esc(o.vehicle)} — ${esc(o.name)}</strong><span>${esc(o.type||"")} · ${o.psi!==""&&o.psi!=null?o.psi:"—"} PSI · ${o.sector?`Secteur ${esc(o.sector)}`:"Secteur non précisé"}</span><p>${esc(o.location||"Affectation non inscrite")}</p></article>`).join(""):'<div class="card-item"><strong>Aucune sortie active</strong></div>';renderSectors(out);renderPrevention(e);$("commandJournalList").innerHTML=(e.journal||[]).map(j=>`<article class="command-journal-item"><time>${esc(j.time)}</time><p>${esc(j.message)}</p></article>`).join("")||'<div class="card-item"><strong>Journal vide</strong></div>';$("commandEventMeta").textContent=`Alarme ${e.alarm} · Chef : ${e.chief||"—"} · Début : ${new Date(e.startedAt).toLocaleString("fr-CA")}`;tick()}function tick(){const e=active();if(!e)return;const s=Math.max(0,Math.floor((Date.now()-new Date(e.startedAt))/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;$("commandElapsed").textContent=h?`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`}function tab(name){document.querySelectorAll("[data-command-tab]").forEach(b=>b.classList.toggle("active",b.dataset.commandTab===name));["Vehicles","Outlets","Sectors","Prevention","Journal","Event"].forEach(n=>$("commandPanel"+n).classList.toggle("hidden",n.toLowerCase()!==name))}$("commandOpenPrevention").onclick=()=>{const id=$("commandPreventionContent")?.dataset?.buildingId;if(!id)return I.toast("Aucune fiche de prévention liée.");window.fireMapPrevention?.open?.(id)};
 $("commandShowPreventionMap").onclick=()=>{const id=$("commandPreventionContent")?.dataset?.buildingId;if(!id)return I.toast("Aucun bâtiment lié.");window.fireMapPreplans?.showBuildingOnMap?.(id)};
 window.addEventListener("firemap:prevention-updated",()=>renderPrevention(active()));
 window.addEventListener("firemap:buildings-updated",()=>renderPrevention(active()));
