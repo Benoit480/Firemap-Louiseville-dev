@@ -224,8 +224,14 @@
             <span>💧 <strong>${esc(usageSupplyLabel(usage?.supplied || "no"))}</strong></span>
             <span>🚿 <strong>${count}</strong> sortie${count !== 1 ? "s" : ""} active${count !== 1 ? "s" : ""}</span>
           </div>
+          <div class="vehicle-profile-residual">
+            <span>📊 <strong>Pression résiduelle</strong></span>
+            <div>
+              <span>Initiale : <strong>${usage?.residualStart !== "" && usage?.residualStart != null ? `${esc(usage.residualStart)} PSI` : "Non inscrite"}</strong></span>
+              <span>Finale : <strong>${usage?.residualEnd !== "" && usage?.residualEnd != null ? `${esc(usage.residualEnd)} PSI` : "Non inscrite"}</strong></span>
+            </div>
+          </div>
           ${activeOutletSummary(usage)}
-          ${usage?.residualStart !== "" && usage?.residualStart != null ? `<p class="vehicle-profile-pressure">Résiduel initial : <strong>${usage.residualStart} PSI</strong>${usage?.residualEnd !== "" && usage?.residualEnd != null ? ` · Final : <strong>${usage.residualEnd} PSI</strong>` : ""}</p>` : ""}
           ${usage?.notes ? `<p class="vehicle-profile-notes">${esc(usage.notes)}</p>` : ""}
           <small>${usage?.updatedAtText ? `Dernière fiche : ${esc(usage.updatedAtText)}` : "Aucune fiche d’utilisation enregistrée"}</small>
         </div>
